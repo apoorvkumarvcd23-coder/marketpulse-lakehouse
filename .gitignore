@@ -1,0 +1,34 @@
+# Private learning material
+/outputs/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*credentials*.json
+*service-account*.json
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Generated data and build outputs
+/data/
+/artifacts/
+/dist/
+/build/
+*.parquet
+*.duckdb
+*.db
+
+# IDE and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
