@@ -1,7 +1,9 @@
 # 90-Day Roadmap
 
-The project runs from July 28 through October 25, 2026. Each completed day
-produces one meaningful, tested commit. Commits are never empty or backdated.
+Day 1 was completed on July 28, 2026. No build ran from July 29 through July 31,
+and Day 2 resumed on August 1. The remaining sequence now runs daily through
+October 28, 2026. Each completed day produces one meaningful, tested commit.
+Commits are never empty or backdated.
 
 ## Week 1 — Foundations
 

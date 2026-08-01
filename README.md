@@ -8,8 +8,8 @@ building one coherent system rather than a collection of unrelated exercises.
 
 ## Current status
 
-Day 1: the repository foundation, project boundaries, private-journal
-separation, and 90-day implementation roadmap are established.
+Day 2: the repository now has a reproducible Python 3.12 environment, a locked
+dependency graph, automated formatting and linting, and its first package tests.
 
 ## What the finished system will do
 
@@ -36,3 +36,18 @@ documentation. A separate private local journal explains every daily commit
 from first principles and includes interview practice.
 
 See [ROADMAP.md](ROADMAP.md) for the scheduled milestones.
+
+## Developer setup
+
+The project uses [uv](https://docs.astral.sh/uv/) to install the correct Python
+version and reproduce the same dependency versions on every machine.
+
+```powershell
+uv python install 3.12
+uv sync --locked
+uv run ruff format --check .
+uv run ruff check .
+uv run pytest
+```
+
+`uv.lock` must change in the same commit whenever project dependencies change.
