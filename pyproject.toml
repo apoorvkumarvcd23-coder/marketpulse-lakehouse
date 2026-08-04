@@ -22,6 +22,9 @@ packages = ["src/marketpulse"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-config --strict-markers"
+markers = [
+    "integration: validates a boundary with external service tooling",
+]
 testpaths = ["tests"]
 
 [tool.ruff]

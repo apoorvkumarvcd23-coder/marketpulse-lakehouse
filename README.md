@@ -8,8 +8,8 @@ building one coherent system rather than a collection of unrelated exercises.
 
 ## Current status
 
-Day 2: the repository now has a reproducible Python 3.12 environment, a locked
-dependency graph, automated formatting and linting, and its first package tests.
+Day 3: Docker Compose now runs a persistent PostgreSQL 18 database with a
+readiness health check and a host-only network binding.
 
 ## What the finished system will do
 
@@ -51,3 +51,21 @@ uv run pytest
 ```
 
 `uv.lock` must change in the same commit whenever project dependencies change.
+
+## Local PostgreSQL
+
+The database runs in Docker, so PostgreSQL does not need to be installed directly
+on the computer. The published port is bound to `127.0.0.1`, which means it is
+reachable from this computer but is not exposed to the local network.
+
+```powershell
+docker compose up -d --wait postgres
+docker compose ps
+docker compose exec -T postgres pg_isready -U marketpulse -d marketpulse
+docker compose exec -T postgres psql -U marketpulse -d marketpulse -c "SELECT 1;"
+docker compose down
+```
+
+The named `postgres-data` volume survives `docker compose down`. The committed
+password is intentionally a local-development value, not a production secret;
+Day 4 moves configuration and real secrets outside the repository.
