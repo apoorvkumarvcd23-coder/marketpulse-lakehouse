@@ -2,8 +2,10 @@
 
 Day 1 was completed on July 28, 2026, and Day 2 resumed on August 1 after three
 missed dates. No build ran on August 2 or August 3, so Day 3 resumed on August 4.
-The remaining sequence now runs daily through October 30, 2026. Each completed
-day produces one meaningful, tested commit. Commits are never empty or backdated.
+No build ran on August 5 or August 6; the user explicitly resumed Day 4 on
+August 7. The remaining sequence now runs daily through November 1, 2026. Each
+completed day produces one meaningful, tested commit. Commits are never empty
+or backdated.
 
 ## Week 1 — Foundations
 

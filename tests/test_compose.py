@@ -1,6 +1,7 @@
 """Contract checks for local Docker Compose services."""
 
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -23,6 +24,12 @@ def load_compose_config() -> dict[str, Any]:
         cwd=PROJECT_ROOT,
         capture_output=True,
         check=False,
+        env={
+            **os.environ,
+            "MARKETPULSE_POSTGRES_DB": "marketpulse",
+            "MARKETPULSE_POSTGRES_USER": "marketpulse",
+            "MARKETPULSE_POSTGRES_PASSWORD": "compose-test-password",
+        },
         text=True,
     )
     assert result.returncode == 0, result.stderr
@@ -39,6 +46,7 @@ def test_postgres_compose_contract() -> None:
     assert postgres["restart"] == "unless-stopped"
     assert postgres["environment"]["POSTGRES_DB"] == "marketpulse"
     assert postgres["environment"]["POSTGRES_USER"] == "marketpulse"
+    assert postgres["environment"]["POSTGRES_PASSWORD"] == "compose-test-password"
 
     host_port = postgres["ports"][0]
     assert host_port["host_ip"] == "127.0.0.1"

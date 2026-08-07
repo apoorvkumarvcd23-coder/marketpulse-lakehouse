@@ -5,7 +5,9 @@ description = "A production-style cryptocurrency data lakehouse built as a 90-da
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 license = "MIT"
-dependencies = []
+dependencies = [
+    "pydantic-settings>=2.10,<3",
+]
 
 [build-system]
 requires = ["hatchling>=1.27"]

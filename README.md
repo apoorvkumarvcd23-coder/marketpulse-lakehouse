@@ -8,8 +8,9 @@ building one coherent system rather than a collection of unrelated exercises.
 
 ## Current status
 
-Day 3: Docker Compose now runs a persistent PostgreSQL 18 database with a
-readiness health check and a host-only network binding.
+Day 4: application and database settings now load from environment variables,
+validate before startup, mask passwords in diagnostic output, and keep local
+secret files out of Git and Docker build contexts.
 
 ## What the finished system will do
 
@@ -52,6 +53,29 @@ uv run pytest
 
 `uv.lock` must change in the same commit whenever project dependencies change.
 
+## Local configuration
+
+Configuration means the values that can change between a laptop, automated
+tests, and production without changing the application code. Create a private
+local `.env` file from the committed example before running the database:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+The example contains only a clearly marked local-development password. Change
+that value in `.env`; never add real cloud credentials or exchange keys to
+`.env.example`. The application validates values at startup and masks the
+PostgreSQL password in its safe diagnostic summary:
+
+```powershell
+uv run python -c "from marketpulse.config import get_settings; print(get_settings().public_summary())"
+```
+
+The real `.env` file, common credential formats, and the private `secrets/`
+directory are ignored by Git. `.dockerignore` also prevents those files from
+being sent into a future container-image build context.
+
 ## Local PostgreSQL
 
 The database runs in Docker, so PostgreSQL does not need to be installed directly
@@ -66,6 +90,6 @@ docker compose exec -T postgres psql -U marketpulse -d marketpulse -c "SELECT 1;
 docker compose down
 ```
 
-The named `postgres-data` volume survives `docker compose down`. The committed
-password is intentionally a local-development value, not a production secret;
-Day 4 moves configuration and real secrets outside the repository.
+The named `postgres-data` volume survives `docker compose down`. PostgreSQL now
+receives its password from the private `.env` file; Compose stops with a useful
+message if that required value is missing.

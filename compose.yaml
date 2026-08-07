@@ -5,9 +5,9 @@ services:
     image: postgres:18
     restart: unless-stopped
     environment:
-      POSTGRES_DB: marketpulse
-      POSTGRES_USER: marketpulse
-      POSTGRES_PASSWORD: marketpulse_local_only
+      POSTGRES_DB: ${MARKETPULSE_POSTGRES_DB:-marketpulse}
+      POSTGRES_USER: ${MARKETPULSE_POSTGRES_USER:-marketpulse}
+      POSTGRES_PASSWORD: ${MARKETPULSE_POSTGRES_PASSWORD:?Copy .env.example to .env and set a local password}
       POSTGRES_INITDB_ARGS: --data-checksums
     ports:
       - "127.0.0.1:5432:5432"

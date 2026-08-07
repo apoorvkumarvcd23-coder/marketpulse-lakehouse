@@ -5,8 +5,12 @@
 .env
 .env.*
 !.env.example
+.envrc
+/secrets/
 *.pem
 *.key
+*.p12
+*.pfx
 *credentials*.json
 *service-account*.json
 
