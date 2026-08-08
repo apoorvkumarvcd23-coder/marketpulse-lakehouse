@@ -8,9 +8,9 @@ building one coherent system rather than a collection of unrelated exercises.
 
 ## Current status
 
-Day 4: application and database settings now load from environment variables,
-validate before startup, mask passwords in diagnostic output, and keep local
-secret files out of Git and Docker build contexts.
+Day 5: the first `MarketCandle` data contract now defines one trusted one-minute
+market row with exact decimal values, UTC timestamps, provenance, a stable
+business key, and fail-closed validation.
 
 ## What the finished system will do
 
@@ -75,6 +75,22 @@ uv run python -c "from marketpulse.config import get_settings; print(get_setting
 The real `.env` file, common credential formats, and the private `secrets/`
 directory are ignored by Git. `.dockerignore` also prevents those files from
 being sent into a future container-image build context.
+
+## First data contract
+
+`MarketCandle` is the boundary between untrusted source rows and trusted
+pipeline data. It accepts only the three project symbols and one-minute
+candles, preserves prices and volumes as decimals, normalizes timezone-aware
+timestamps to UTC, and records source provenance.
+
+```python
+from marketpulse.contracts import MarketCandle
+```
+
+The natural uniqueness key is `(symbol, interval, open_time)`. Unsupported or
+impossible records fail validation before they can reach storage. See the
+[MarketCandle contract](docs/data-contracts/market-candle.md) for every field,
+invariant, source mapping, and rejection rule.
 
 ## Local PostgreSQL
 
