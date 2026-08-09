@@ -8,9 +8,9 @@ building one coherent system rather than a collection of unrelated exercises.
 
 ## Current status
 
-Day 5: the first `MarketCandle` data contract now defines one trusted one-minute
-market row with exact decimal values, UTC timestamps, provenance, a stable
-business key, and fail-closed validation.
+Day 6: `marketpulse fetch-sample` downloads one fixed BTC/USDT archive with a
+timeout and size limit, reads it without extracting files, and turns a bounded
+number of CSV rows into validated `MarketCandle` records.
 
 ## What the finished system will do
 
@@ -37,6 +37,23 @@ documentation. A separate private local journal explains every daily commit
 from first principles and includes interview practice.
 
 See [ROADMAP.md](ROADMAP.md) for the scheduled milestones.
+
+## Fetch the learning sample
+
+The first ingestion command uses Binance's public BTCUSDT one-minute file for
+2024-01-01. A fixed historical date makes the result repeatable, and the
+generated ZIP stays under the ignored `data/` directory.
+
+```powershell
+uv run marketpulse fetch-sample --limit 5
+```
+
+The command prints the archive path, number of parsed candles, first business
+key, and locally calculated SHA-256 fingerprint. It intentionally performs one
+HTTP attempt only. Retries arrive on Day 8, and comparison with Binance's
+official checksum arrives on Day 9. See the
+[sample ingestion guide](docs/ingestion/btcusdt-sample.md) for the source-to-contract
+mapping and safety boundaries.
 
 ## Developer setup
 
