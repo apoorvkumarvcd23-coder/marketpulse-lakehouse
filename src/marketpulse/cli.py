@@ -6,6 +6,7 @@ import argparse
 from collections.abc import Sequence
 from pathlib import Path
 
+from marketpulse.doctor import format_doctor_report, run_doctor
 from marketpulse.ingestion import (
     MAX_SAMPLE_ROWS,
     SampleDownloadError,
@@ -31,6 +32,10 @@ def build_parser() -> argparse.ArgumentParser:
         description="Learn and operate the MarketPulse data pipeline.",
     )
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser(
+        "doctor",
+        help="explain and verify the basic local project setup",
+    )
     fetch = commands.add_parser(
         "fetch-sample",
         help="download and parse a small fixed BTCUSDT candle sample",
@@ -59,6 +64,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run the requested command and return a process exit code."""
     parser = build_parser()
     arguments = parser.parse_args(argv)
+
+    if arguments.command == "doctor":
+        report = run_doctor(Path.cwd())
+        print(format_doctor_report(report))
+        return 0 if report.passed else 1
 
     if arguments.command == "fetch-sample":
         try:

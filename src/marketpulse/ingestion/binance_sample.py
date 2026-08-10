@@ -172,7 +172,10 @@ def read_sample_archive(
         raise ValueError(f"limit must be between 1 and {MAX_SAMPLE_ROWS}")
 
     archive_path = Path(archive_path)
-    checksum = sha256_file(archive_path)
+    try:
+        checksum = sha256_file(archive_path)
+    except OSError as exc:
+        raise SampleFormatError(f"could not read ZIP archive {archive_path}: {exc}") from exc
     accepted_at = ingestion_time or datetime.now(UTC)
     batch_run_id = run_id or uuid4()
 
@@ -210,6 +213,8 @@ def read_sample_archive(
                                 f"{member.filename} row {row_number}: {exc}"
                             ) from exc
                         candles.append(candle)
+    except UnicodeError as exc:
+        raise SampleFormatError(f"{SAMPLE_MEMBER_NAME} is not valid UTF-8 text: {exc}") from exc
     except (BadZipFile, OSError) as exc:
         raise SampleFormatError(f"could not read ZIP archive {archive_path}: {exc}") from exc
 

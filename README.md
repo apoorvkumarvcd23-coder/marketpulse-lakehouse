@@ -8,9 +8,9 @@ building one coherent system rather than a collection of unrelated exercises.
 
 ## Current status
 
-Day 6: `marketpulse fetch-sample` downloads one fixed BTC/USDT archive with a
-timeout and size limit, reads it without extracting files, and turns a bounded
-number of CSV rows into validated `MarketCandle` records.
+Day 7: the first weekly checkpoint expands parser failure coverage, adds the
+read-only `marketpulse doctor` setup check, and records Week 1 acceptance
+evidence and known limits.
 
 ## What the finished system will do
 
@@ -37,6 +37,25 @@ documentation. A separate private local journal explains every daily commit
 from first principles and includes interview practice.
 
 See [ROADMAP.md](ROADMAP.md) for the scheduled milestones.
+
+## Check the local setup
+
+Run the setup doctor from the repository root whenever a command behaves
+unexpectedly or after cloning the project on another computer:
+
+```powershell
+uv run marketpulse doctor
+```
+
+It checks five deterministic requirements: Python 3.12, required project files,
+project metadata, the `uv` lockfile, and Git exclusions for generated data,
+private outputs, and `.env`. Every failure includes one repair hint. The doctor
+is read-only: it does not start Docker, download data, inspect secrets, or make
+network calls.
+
+See the [Week 1 acceptance review](docs/reviews/week-01.md) for delivered
+capabilities, verification commands, parser failure coverage, and the explicit
+limits carried into Week 2.
 
 ## Fetch the learning sample
 

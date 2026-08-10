@@ -161,3 +161,99 @@ def test_download_size_limit_removes_partial_file(
 
     assert not destination.exists()
     assert not destination.with_name(f"{destination.name}.part").exists()
+
+
+def test_missing_archive_is_reported_as_a_sample_format_error(tmp_path: Path) -> None:
+    archive_path = tmp_path / SAMPLE_ARCHIVE_NAME
+
+    with pytest.raises(SampleFormatError, match="could not read ZIP archive"):
+        read_sample_archive(archive_path, ingestion_time=INGESTION_TIME)
+
+
+def test_empty_csv_is_rejected(tmp_path: Path) -> None:
+    archive_path = _write_archive(tmp_path / SAMPLE_ARCHIVE_NAME, ())
+
+    with pytest.raises(SampleFormatError, match="contains no candle rows"):
+        read_sample_archive(archive_path, ingestion_time=INGESTION_TIME)
+
+
+def test_archive_with_multiple_files_is_rejected(tmp_path: Path) -> None:
+    archive_path = tmp_path / SAMPLE_ARCHIVE_NAME
+    with ZipFile(archive_path, "w", compression=ZIP_DEFLATED) as archive:
+        archive.writestr(SAMPLE_MEMBER_NAME, VALID_ROWS[0])
+        archive.writestr("surprise.csv", VALID_ROWS[1])
+
+    with pytest.raises(SampleFormatError, match="archive must contain only"):
+        read_sample_archive(archive_path, ingestion_time=INGESTION_TIME)
+
+
+def test_expanded_csv_size_is_bounded(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    archive_path = _write_archive(tmp_path / SAMPLE_ARCHIVE_NAME, VALID_ROWS)
+    monkeypatch.setattr(binance_sample, "MAX_UNCOMPRESSED_BYTES", 1)
+
+    with pytest.raises(SampleFormatError, match="CSV expands to"):
+        read_sample_archive(archive_path, ingestion_time=INGESTION_TIME)
+
+
+def test_non_utf8_csv_is_rejected_with_a_domain_error(tmp_path: Path) -> None:
+    archive_path = tmp_path / SAMPLE_ARCHIVE_NAME
+    with ZipFile(archive_path, "w", compression=ZIP_DEFLATED) as archive:
+        archive.writestr(SAMPLE_MEMBER_NAME, b"\xff\xfe\x00")
+
+    with pytest.raises(SampleFormatError, match="is not valid UTF-8 text"):
+        read_sample_archive(archive_path, ingestion_time=INGESTION_TIME)
+
+
+def test_contract_validation_failure_keeps_row_context(tmp_path: Path) -> None:
+    impossible = VALID_ROWS[0].split(",")
+    impossible[2] = "1.00000000"
+    archive_path = _write_archive(tmp_path / SAMPLE_ARCHIVE_NAME, (",".join(impossible),))
+
+    with pytest.raises(
+        SampleFormatError,
+        match=r"\.csv row 1: row failed MarketCandle validation",
+    ):
+        read_sample_archive(archive_path, ingestion_time=INGESTION_TIME)
+
+
+@pytest.mark.parametrize("limit", [0, 101])
+def test_row_limit_must_stay_inside_the_learning_boundary(tmp_path: Path, limit: int) -> None:
+    archive_path = _write_archive(tmp_path / SAMPLE_ARCHIVE_NAME, VALID_ROWS)
+
+    with pytest.raises(ValueError, match="limit must be between 1 and 100"):
+        read_sample_archive(archive_path, limit=limit, ingestion_time=INGESTION_TIME)
+
+
+def test_announced_download_size_is_rejected_before_writing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    content = _archive_bytes()
+    monkeypatch.setattr(
+        binance_sample,
+        "urlopen",
+        lambda _request, timeout: FakeResponse(content, announced_length=len(content) + 1),
+    )
+    destination = tmp_path / SAMPLE_ARCHIVE_NAME
+
+    with pytest.raises(SampleDownloadError, match="server announced"):
+        download_sample(destination, max_bytes=len(content))
+
+    assert not destination.exists()
+    assert not destination.with_name(f"{destination.name}.part").exists()
+
+
+def test_empty_download_removes_partial_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        binance_sample,
+        "urlopen",
+        lambda _request, timeout: FakeResponse(b""),
+    )
+    destination = tmp_path / SAMPLE_ARCHIVE_NAME
+
+    with pytest.raises(SampleDownloadError, match="server returned an empty file"):
+        download_sample(destination)
+
+    assert not destination.exists()
+    assert not destination.with_name(f"{destination.name}.part").exists()
