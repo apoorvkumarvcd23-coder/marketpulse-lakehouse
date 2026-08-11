@@ -8,9 +8,9 @@ building one coherent system rather than a collection of unrelated exercises.
 
 ## Current status
 
-Day 7: the first weekly checkpoint expands parser failure coverage, adds the
-read-only `marketpulse doctor` setup check, and records Week 1 acceptance
-evidence and known limits.
+Day 8: a reusable HTTP client now applies a timeout to every attempt, retries
+only temporary failures, waits with capped exponential backoff, and preserves
+atomic file publication across attempts.
 
 ## What the finished system will do
 
@@ -68,11 +68,15 @@ uv run marketpulse fetch-sample --limit 5
 ```
 
 The command prints the archive path, number of parsed candles, first business
-key, and locally calculated SHA-256 fingerprint. It intentionally performs one
-HTTP attempt only. Retries arrive on Day 8, and comparison with Binance's
-official checksum arrives on Day 9. See the
+key, and locally calculated SHA-256 fingerprint. Downloads make at most three
+attempts with a 30-second timeout and 0.5 then 1.0 seconds of exponential
+backoff for temporary failures. Permanent HTTP responses and invalid content
+fail immediately. Comparison with Binance's official checksum arrives on Day
+9. See the
 [sample ingestion guide](docs/ingestion/btcusdt-sample.md) for the source-to-contract
-mapping and safety boundaries.
+mapping and safety boundaries, and the
+[HTTP reliability policy](docs/ingestion/http-reliability.md) for failure
+classification and retry behavior.
 
 ## Developer setup
 

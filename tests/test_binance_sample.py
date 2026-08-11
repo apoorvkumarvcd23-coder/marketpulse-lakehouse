@@ -22,6 +22,7 @@ from marketpulse.ingestion.binance_sample import (
     read_sample_archive,
     sha256_file,
 )
+from marketpulse.ingestion.http_client import HttpClient
 
 INGESTION_TIME = datetime(2026, 8, 9, 13, 30, tzinfo=UTC)
 RUN_ID = UUID("7e3a91f4-4ead-45e0-a811-08839e4275f9")
@@ -128,36 +129,38 @@ def test_corrupt_zip_is_rejected_with_a_domain_error(tmp_path: Path) -> None:
         read_sample_archive(archive_path, ingestion_time=INGESTION_TIME)
 
 
-def test_download_is_published_only_after_it_finishes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_download_is_published_only_after_it_finishes(tmp_path: Path) -> None:
     content = _archive_bytes()
-    monkeypatch.setattr(
-        binance_sample,
-        "urlopen",
-        lambda _request, timeout: FakeResponse(content, announced_length=len(content)),
+    client = HttpClient(
+        opener=lambda _request, timeout: FakeResponse(
+            content,
+            announced_length=len(content),
+        ),
+        sleeper=lambda _seconds: None,
     )
     destination = tmp_path / SAMPLE_ARCHIVE_NAME
 
-    result = download_sample(destination, timeout_seconds=2, max_bytes=len(content))
+    result = download_sample(
+        destination,
+        timeout_seconds=2,
+        max_bytes=len(content),
+        http_client=client,
+    )
 
     assert result.read_bytes() == content
     assert not destination.with_name(f"{destination.name}.part").exists()
 
 
-def test_download_size_limit_removes_partial_file(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_download_size_limit_removes_partial_file(tmp_path: Path) -> None:
     content = _archive_bytes()
-    monkeypatch.setattr(
-        binance_sample,
-        "urlopen",
-        lambda _request, timeout: FakeResponse(content),
+    client = HttpClient(
+        opener=lambda _request, timeout: FakeResponse(content),
+        sleeper=lambda _seconds: None,
     )
     destination = tmp_path / SAMPLE_ARCHIVE_NAME
 
-    with pytest.raises(SampleDownloadError, match="download exceeded"):
-        download_sample(destination, max_bytes=10)
+    with pytest.raises(SampleDownloadError, match="response exceeded"):
+        download_sample(destination, max_bytes=10, http_client=client)
 
     assert not destination.exists()
     assert not destination.with_name(f"{destination.name}.part").exists()
@@ -224,36 +227,33 @@ def test_row_limit_must_stay_inside_the_learning_boundary(tmp_path: Path, limit:
         read_sample_archive(archive_path, limit=limit, ingestion_time=INGESTION_TIME)
 
 
-def test_announced_download_size_is_rejected_before_writing(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_announced_download_size_is_rejected_before_writing(tmp_path: Path) -> None:
     content = _archive_bytes()
-    monkeypatch.setattr(
-        binance_sample,
-        "urlopen",
-        lambda _request, timeout: FakeResponse(content, announced_length=len(content) + 1),
+    client = HttpClient(
+        opener=lambda _request, timeout: FakeResponse(
+            content,
+            announced_length=len(content) + 1,
+        ),
+        sleeper=lambda _seconds: None,
     )
     destination = tmp_path / SAMPLE_ARCHIVE_NAME
 
-    with pytest.raises(SampleDownloadError, match="server announced"):
-        download_sample(destination, max_bytes=len(content))
+    with pytest.raises(SampleDownloadError, match="response announced"):
+        download_sample(destination, max_bytes=len(content), http_client=client)
 
     assert not destination.exists()
     assert not destination.with_name(f"{destination.name}.part").exists()
 
 
-def test_empty_download_removes_partial_file(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(
-        binance_sample,
-        "urlopen",
-        lambda _request, timeout: FakeResponse(b""),
+def test_empty_download_removes_partial_file(tmp_path: Path) -> None:
+    client = HttpClient(
+        opener=lambda _request, timeout: FakeResponse(b""),
+        sleeper=lambda _seconds: None,
     )
     destination = tmp_path / SAMPLE_ARCHIVE_NAME
 
-    with pytest.raises(SampleDownloadError, match="server returned an empty file"):
-        download_sample(destination)
+    with pytest.raises(SampleDownloadError, match="server returned an empty response"):
+        download_sample(destination, http_client=client)
 
     assert not destination.exists()
     assert not destination.with_name(f"{destination.name}.part").exists()

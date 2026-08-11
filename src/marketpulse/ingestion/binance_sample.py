@@ -8,14 +8,13 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from io import TextIOWrapper
 from pathlib import Path
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 from uuid import UUID, uuid4
 from zipfile import BadZipFile, ZipFile
 
 from pydantic import ValidationError
 
 from marketpulse.contracts import MarketCandle
+from marketpulse.ingestion.http_client import HttpClient, HttpClientError
 
 SAMPLE_ARCHIVE_NAME = "BTCUSDT-1m-2024-01-01.zip"
 SAMPLE_MEMBER_NAME = "BTCUSDT-1m-2024-01-01.csv"
@@ -52,48 +51,19 @@ def download_sample(
     url: str = SAMPLE_URL,
     timeout_seconds: float = 30.0,
     max_bytes: int = MAX_DOWNLOAD_BYTES,
+    http_client: HttpClient | None = None,
 ) -> Path:
-    """Download once into a temporary file, then atomically publish the result."""
-    if timeout_seconds <= 0:
-        raise ValueError("timeout_seconds must be positive")
-    if max_bytes <= 0:
-        raise ValueError("max_bytes must be positive")
-
+    """Download with the shared bounded retry client and sample-specific errors."""
     destination = Path(destination)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    partial_path = destination.with_name(f"{destination.name}.part")
-    partial_path.unlink(missing_ok=True)
-    request = Request(url, headers={"User-Agent": "MarketPulse-Lakehouse/0.1"})
-
     try:
-        with urlopen(request, timeout=timeout_seconds) as response:  # noqa: S310
-            content_length = response.headers.get("Content-Length")
-            if content_length is not None and int(content_length) > max_bytes:
-                raise SampleDownloadError(
-                    f"server announced {content_length} bytes; limit is {max_bytes}"
-                )
-
-            downloaded_bytes = 0
-            with partial_path.open("wb") as target:
-                while chunk := response.read(DOWNLOAD_CHUNK_BYTES):
-                    downloaded_bytes += len(chunk)
-                    if downloaded_bytes > max_bytes:
-                        raise SampleDownloadError(
-                            f"download exceeded the {max_bytes}-byte safety limit"
-                        )
-                    target.write(chunk)
-    except SampleDownloadError:
-        partial_path.unlink(missing_ok=True)
-        raise
-    except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
-        partial_path.unlink(missing_ok=True)
+        (http_client or HttpClient()).download(
+            url,
+            destination,
+            timeout_seconds=timeout_seconds,
+            max_bytes=max_bytes,
+        )
+    except HttpClientError as exc:
         raise SampleDownloadError(f"could not download {url}: {exc}") from exc
-
-    if downloaded_bytes == 0:
-        partial_path.unlink(missing_ok=True)
-        raise SampleDownloadError("the server returned an empty file")
-
-    partial_path.replace(destination)
     return destination
 
 

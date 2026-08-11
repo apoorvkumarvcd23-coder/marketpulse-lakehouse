@@ -43,15 +43,18 @@ converted through binary floating point.
 
 `uv run marketpulse fetch-sample --limit 5`:
 
-1. makes one HTTPS request with a 30-second timeout;
-2. refuses a response larger than 5 MiB;
-3. writes to a `.part` file and renames it only after completion;
-4. accepts exactly the expected CSV member and never extracts the ZIP;
-5. refuses a CSV member larger than 10 MiB;
-6. reads at most 100 rows and validates each selected row as a `MarketCandle`.
+1. makes at most three HTTPS attempts, each with a 30-second timeout;
+2. retries only temporary transport or HTTP failures with 0.5 then 1.0 seconds
+   of exponential backoff;
+3. refuses a response larger than 5 MiB;
+4. writes each attempt to a `.part` file and renames it only after completion;
+5. accepts exactly the expected CSV member and never extracts the ZIP;
+6. refuses a CSV member larger than 10 MiB;
+7. reads at most 100 rows and validates each selected row as a `MarketCandle`.
 
 Generated archives live under `data/`, which Git ignores. This day calculates
 a useful local SHA-256 fingerprint but does **not** yet compare it with the
-provider's `.CHECKSUM` file. Retry/backoff is Day 8 and official checksum
-verification is Day 9, so this first command does not pretend those production
-controls already exist.
+provider's `.CHECKSUM` file. Timeout, retry classification, and capped
+exponential backoff are defined in the [HTTP reliability policy](http-reliability.md).
+Official checksum verification is Day 9, so the command does not pretend source
+integrity comparison already exists.
