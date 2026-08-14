@@ -58,8 +58,11 @@ Python's documented `urlopen` timeout is passed to every attempt, and its
 The client currently downloads only HTTP(S) GET resources and does not retry
 non-idempotent writes.
 
-Day 8 does not compare downloaded bytes with the provider's published checksum.
-Official `.CHECKSUM` retrieval and SHA-256 comparison are the Day 9 milestone.
+The HTTP client proves only that a complete bounded response arrived. Day 9
+adds a separate [checksum verification boundary](checksum-verification.md) that
+proves the candidate ZIP matches Binance's published SHA-256 before parsing.
+Keeping transport reliability and content integrity separate gives each failure
+one precise meaning.
 
 ## Evidence
 

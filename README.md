@@ -8,9 +8,9 @@ building one coherent system rather than a collection of unrelated exercises.
 
 ## Current status
 
-Day 8: a reusable HTTP client now applies a timeout to every attempt, retries
-only temporary failures, waits with capped exponential backoff, and preserves
-atomic file publication across attempts.
+Day 9: the sample now downloads Binance's matching `.CHECKSUM` record, binds it
+to the exact ZIP name, calculates SHA-256 locally, and refuses unverified bytes
+before ZIP or CSV parsing begins.
 
 ## What the finished system will do
 
@@ -68,15 +68,17 @@ uv run marketpulse fetch-sample --limit 5
 ```
 
 The command prints the archive path, number of parsed candles, first business
-key, and locally calculated SHA-256 fingerprint. Downloads make at most three
-attempts with a 30-second timeout and 0.5 then 1.0 seconds of exponential
-backoff for temporary failures. Permanent HTTP responses and invalid content
-fail immediately. Comparison with Binance's official checksum arrives on Day
-9. See the
+key, locally calculated SHA-256 fingerprint, and `Official checksum: verified`.
+It downloads both the ZIP and Binance's matching `.CHECKSUM` through the bounded
+HTTP client. Candidate files remain private until the checksum names the exact
+source archive and the locally calculated digest matches. A mismatch preserves
+the previous published pair and stops before parsing. See the
 [sample ingestion guide](docs/ingestion/btcusdt-sample.md) for the source-to-contract
 mapping and safety boundaries, and the
 [HTTP reliability policy](docs/ingestion/http-reliability.md) for failure
-classification and retry behavior.
+classification and retry behavior. The
+[checksum verification policy](docs/ingestion/checksum-verification.md) explains
+the trust boundary, strict file format, cache behavior, and failure evidence.
 
 ## Developer setup
 

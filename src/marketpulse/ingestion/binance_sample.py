@@ -3,24 +3,33 @@
 from __future__ import annotations
 
 import csv
-import hashlib
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from io import TextIOWrapper
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 from zipfile import BadZipFile, ZipFile
 
 from pydantic import ValidationError
 
 from marketpulse.contracts import MarketCandle
+from marketpulse.ingestion.checksum import (
+    MAX_CHECKSUM_FILE_BYTES,
+    ChecksumError,
+    PublishedChecksum,
+    read_sha256_checksum,
+    sha256_file,
+    verify_sha256,
+)
 from marketpulse.ingestion.http_client import HttpClient, HttpClientError
 
 SAMPLE_ARCHIVE_NAME = "BTCUSDT-1m-2024-01-01.zip"
 SAMPLE_MEMBER_NAME = "BTCUSDT-1m-2024-01-01.csv"
 SAMPLE_URL = f"https://data.binance.vision/data/spot/daily/klines/BTCUSDT/1m/{SAMPLE_ARCHIVE_NAME}"
+SAMPLE_CHECKSUM_NAME = f"{SAMPLE_ARCHIVE_NAME}.CHECKSUM"
+SAMPLE_CHECKSUM_URL = f"{SAMPLE_URL}.CHECKSUM"
 DEFAULT_SAMPLE_DIRECTORY = Path("data/samples")
-DOWNLOAD_CHUNK_BYTES = 64 * 1024
 MAX_DOWNLOAD_BYTES = 5 * 1024 * 1024
 MAX_UNCOMPRESSED_BYTES = 10 * 1024 * 1024
 MAX_SAMPLE_ROWS = 100
@@ -36,6 +45,10 @@ class SampleFormatError(ValueError):
     """The downloaded archive does not match the expected sample format."""
 
 
+class SampleIntegrityError(ValueError):
+    """The archive could not be tied to Binance's published SHA-256 checksum."""
+
+
 @dataclass(frozen=True, slots=True)
 class SampleBatch:
     """A source archive and the trusted candle records parsed from it."""
@@ -43,37 +56,93 @@ class SampleBatch:
     archive_path: Path
     archive_sha256: str
     candles: tuple[MarketCandle, ...]
+    checksum_path: Path | None = None
+    official_checksum_verified: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class VerifiedSampleDownload:
+    """A downloaded archive and checksum that matched before publication."""
+
+    archive_path: Path
+    checksum_path: Path
+    sha256: str
 
 
 def download_sample(
     destination: Path,
     *,
     url: str = SAMPLE_URL,
+    checksum_url: str | None = None,
+    checksum_destination: Path | None = None,
     timeout_seconds: float = 30.0,
     max_bytes: int = MAX_DOWNLOAD_BYTES,
     http_client: HttpClient | None = None,
-) -> Path:
-    """Download with the shared bounded retry client and sample-specific errors."""
+) -> VerifiedSampleDownload:
+    """Download candidates, verify the official checksum, then publish both files."""
     destination = Path(destination)
+    published_checksum_path = Path(
+        checksum_destination or destination.with_name(f"{destination.name}.CHECKSUM")
+    )
+    source_filename = PurePosixPath(urlsplit(url).path).name
+    if not source_filename:
+        raise ValueError("url must identify one source file")
+
+    candidate_id = uuid4().hex
+    archive_candidate = destination.with_name(f".{destination.name}.{candidate_id}.candidate")
+    checksum_candidate = published_checksum_path.with_name(
+        f".{published_checksum_path.name}.{candidate_id}.candidate"
+    )
+    client = http_client or HttpClient()
     try:
-        (http_client or HttpClient()).download(
+        client.download(
+            checksum_url or f"{url}.CHECKSUM",
+            checksum_candidate,
+            timeout_seconds=timeout_seconds,
+            max_bytes=MAX_CHECKSUM_FILE_BYTES,
+        )
+        client.download(
             url,
-            destination,
+            archive_candidate,
             timeout_seconds=timeout_seconds,
             max_bytes=max_bytes,
         )
-    except HttpClientError as exc:
-        raise SampleDownloadError(f"could not download {url}: {exc}") from exc
-    return destination
+        published = read_sha256_checksum(
+            checksum_candidate,
+            expected_filename=source_filename,
+        )
+        calculated = verify_sha256(
+            archive_candidate,
+            expected_sha256=published.sha256,
+        )
+        archive_candidate.replace(destination)
+        checksum_candidate.replace(published_checksum_path)
+    except (HttpClientError, ChecksumError, OSError) as exc:
+        raise SampleDownloadError(
+            f"could not download and verify {source_filename}: {exc}"
+        ) from exc
+    finally:
+        for candidate in (archive_candidate, checksum_candidate):
+            candidate.unlink(missing_ok=True)
+            candidate.with_name(f"{candidate.name}.part").unlink(missing_ok=True)
+
+    return VerifiedSampleDownload(
+        archive_path=destination,
+        checksum_path=published_checksum_path,
+        sha256=calculated,
+    )
 
 
-def sha256_file(path: Path) -> str:
-    """Return the lowercase SHA-256 fingerprint of a local file."""
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as source:
-        while chunk := source.read(DOWNLOAD_CHUNK_BYTES):
-            digest.update(chunk)
-    return digest.hexdigest()
+def _read_official_checksum(checksum_path: Path) -> PublishedChecksum:
+    try:
+        return read_sha256_checksum(
+            checksum_path,
+            expected_filename=SAMPLE_ARCHIVE_NAME,
+        )
+    except ChecksumError as exc:
+        raise SampleIntegrityError(
+            f"official checksum is unavailable or invalid: {exc}; rerun with --force"
+        ) from exc
 
 
 def milliseconds_to_utc(value: str | int) -> datetime:
@@ -136,6 +205,8 @@ def read_sample_archive(
     limit: int = 5,
     ingestion_time: datetime | None = None,
     run_id: UUID | None = None,
+    expected_sha256: str | None = None,
+    checksum_path: Path | None = None,
 ) -> SampleBatch:
     """Read a few rows from the expected CSV member without extracting the ZIP."""
     if not 1 <= limit <= MAX_SAMPLE_ROWS:
@@ -143,8 +214,16 @@ def read_sample_archive(
 
     archive_path = Path(archive_path)
     try:
-        checksum = sha256_file(archive_path)
-    except OSError as exc:
+        checksum = (
+            verify_sha256(archive_path, expected_sha256=expected_sha256)
+            if expected_sha256 is not None
+            else sha256_file(archive_path)
+        )
+    except ChecksumError as exc:
+        if expected_sha256 is not None:
+            raise SampleIntegrityError(
+                f"could not verify ZIP archive {archive_path}: {exc}"
+            ) from exc
         raise SampleFormatError(f"could not read ZIP archive {archive_path}: {exc}") from exc
     accepted_at = ingestion_time or datetime.now(UTC)
     batch_run_id = run_id or uuid4()
@@ -195,6 +274,8 @@ def read_sample_archive(
         archive_path=archive_path,
         archive_sha256=checksum,
         candles=tuple(candles),
+        checksum_path=Path(checksum_path) if checksum_path is not None else None,
+        official_checksum_verified=expected_sha256 is not None,
     )
 
 
@@ -206,11 +287,23 @@ def fetch_sample(
 ) -> SampleBatch:
     """Download the fixed sample when needed and return its first validated candles."""
     archive_path = Path(output_directory) / SAMPLE_ARCHIVE_NAME
-    if force or not archive_path.is_file():
-        download_sample(archive_path)
+    checksum_path = Path(output_directory) / SAMPLE_CHECKSUM_NAME
+    if force or not archive_path.is_file() or not checksum_path.is_file():
+        verified = download_sample(
+            archive_path,
+            checksum_destination=checksum_path,
+        )
+        expected_sha256 = verified.sha256
     elif not 0 < archive_path.stat().st_size <= MAX_DOWNLOAD_BYTES:
         raise SampleDownloadError(
             "cached sample is empty or exceeds the download safety limit; rerun with --force"
         )
+    else:
+        expected_sha256 = _read_official_checksum(checksum_path).sha256
 
-    return read_sample_archive(archive_path, limit=limit)
+    return read_sample_archive(
+        archive_path,
+        limit=limit,
+        expected_sha256=expected_sha256,
+        checksum_path=checksum_path,
+    )

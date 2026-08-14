@@ -35,26 +35,29 @@ accepts milliseconds. Safe mixed-unit normalization is scheduled for Day 17.
 | 9–11 | Taker volumes and unused field | Not needed by the current contract |
 
 The parser adds `symbol`, `interval`, `source_file`, a locally calculated
-archive SHA-256 fingerprint, the UTC ingestion time, and one run ID shared by
-the parsed rows. Decimal text goes directly into the contract; it is never
-converted through binary floating point.
+and officially verified archive SHA-256 fingerprint, the UTC ingestion time,
+and one run ID shared by the parsed rows. Decimal text goes directly into the
+contract; it is never converted through binary floating point.
 
 ## Safety boundaries
 
 `uv run marketpulse fetch-sample --limit 5`:
 
-1. makes at most three HTTPS attempts, each with a 30-second timeout;
-2. retries only temporary transport or HTTP failures with 0.5 then 1.0 seconds
+1. downloads the exact `.CHECKSUM` record and ZIP as private candidate files;
+2. makes at most three HTTPS attempts per resource, each with a 30-second timeout;
+3. retries only temporary transport or HTTP failures with 0.5 then 1.0 seconds
    of exponential backoff;
-3. refuses a response larger than 5 MiB;
-4. writes each attempt to a `.part` file and renames it only after completion;
-5. accepts exactly the expected CSV member and never extracts the ZIP;
-6. refuses a CSV member larger than 10 MiB;
-7. reads at most 100 rows and validates each selected row as a `MarketCandle`.
+4. bounds checksum text to 1 KiB and ZIP bytes to 5 MiB;
+5. accepts one ASCII checksum record containing 64 hexadecimal characters and
+   the exact source ZIP name;
+6. calculates SHA-256 locally and stops before publication or parsing on mismatch;
+7. publishes the verified pair, then verifies cached bytes again on every run;
+8. accepts exactly the expected CSV member and never extracts the ZIP;
+9. refuses a CSV member larger than 10 MiB;
+10. reads at most 100 rows and validates each selected row as a `MarketCandle`.
 
-Generated archives live under `data/`, which Git ignores. This day calculates
-a useful local SHA-256 fingerprint but does **not** yet compare it with the
-provider's `.CHECKSUM` file. Timeout, retry classification, and capped
-exponential backoff are defined in the [HTTP reliability policy](http-reliability.md).
-Official checksum verification is Day 9, so the command does not pretend source
-integrity comparison already exists.
+Generated archives and checksum files live under `data/`, which Git ignores.
+Timeout, retry classification, and capped exponential backoff are defined in
+the [HTTP reliability policy](http-reliability.md). Exact source identity,
+digest comparison, cache re-verification, and integrity failure behavior are
+defined in the [checksum verification policy](checksum-verification.md).

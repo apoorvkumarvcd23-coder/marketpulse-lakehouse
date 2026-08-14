@@ -11,6 +11,7 @@ from marketpulse.ingestion import (
     MAX_SAMPLE_ROWS,
     SampleDownloadError,
     SampleFormatError,
+    SampleIntegrityError,
     fetch_sample,
 )
 
@@ -77,7 +78,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 limit=arguments.limit,
                 force=arguments.force,
             )
-        except (SampleDownloadError, SampleFormatError) as exc:
+        except (SampleDownloadError, SampleFormatError, SampleIntegrityError) as exc:
             parser.error(str(exc))
 
         first = batch.candles[0]
@@ -88,6 +89,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"{first.symbol.value} | {first.interval.value} | {first.open_time.isoformat()}"
         )
         print(f"Archive SHA-256: {batch.archive_sha256}")
+        verification = "verified" if batch.official_checksum_verified else "not verified"
+        print(f"Official checksum: {verification}")
         return 0
 
     parser.error(f"unknown command: {arguments.command}")
