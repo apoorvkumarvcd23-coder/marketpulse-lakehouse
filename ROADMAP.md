@@ -5,8 +5,10 @@ missed dates. No build ran on August 2 or August 3, so Day 3 resumed on August 4
 No build ran on August 5 or August 6; the user explicitly resumed Day 4 on
 August 7. No build ran on August 12 or August 13; the user explicitly resumed
 Day 9 on August 14. The remaining sequence now runs daily through November 3,
-2026. Each completed day produces one meaningful, tested commit. Commits are
-never empty or backdated.
+2026. Days 1 through 9 retain their truthful one-commit history. Starting with
+Day 10, each daily milestone is split into three to five meaningful, separately
+reviewable commits when its honest scope supports them. Commits are never empty,
+cosmetic, padded, fabricated, or backdated.
 
 ## Week 1 — Foundations
 

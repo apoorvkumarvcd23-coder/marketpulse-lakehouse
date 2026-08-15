@@ -51,13 +51,17 @@ contract; it is never converted through binary floating point.
 5. accepts one ASCII checksum record containing 64 hexadecimal characters and
    the exact source ZIP name;
 6. calculates SHA-256 locally and stops before publication or parsing on mismatch;
-7. publishes the verified pair, then verifies cached bytes again on every run;
-8. accepts exactly the expected CSV member and never extracts the ZIP;
-9. refuses a CSV member larger than 10 MiB;
-10. reads at most 100 rows and validates each selected row as a `MarketCandle`.
+7. records each durable checkpoint in `data/samples/ingestion-manifest.json`;
+8. publishes the verified pair, then verifies cached bytes again on every run;
+9. resumes an interrupted attempt from its last trustworthy checkpoint;
+10. accepts exactly the expected CSV member and never extracts the ZIP;
+11. refuses a CSV member larger than 10 MiB;
+12. reads at most 100 rows and validates each selected row as a `MarketCandle`.
 
 Generated archives and checksum files live under `data/`, which Git ignores.
 Timeout, retry classification, and capped exponential backoff are defined in
 the [HTTP reliability policy](http-reliability.md). Exact source identity,
 digest comparison, cache re-verification, and integrity failure behavior are
 defined in the [checksum verification policy](checksum-verification.md).
+Manifest states, retry decisions, atomic persistence, and current concurrency
+limits are documented in the [ingestion manifest guide](manifest.md).

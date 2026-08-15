@@ -56,7 +56,7 @@ official ZIP      --bounded download--> private archive candidate
 A failed refresh never publishes either candidate and leaves an older pair
 untouched. Because publishing two separate files cannot be one filesystem
 operation, every cached run verifies the archive against its saved official
-record again before parsing. The Day 10 manifest will add durable run state and
+record again before parsing. The Day 10 manifest adds durable run state and
 recovery evidence around this boundary.
 
 ## Error categories

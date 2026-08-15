@@ -8,9 +8,10 @@ building one coherent system rather than a collection of unrelated exercises.
 
 ## Current status
 
-Day 9: the sample now downloads Binance's matching `.CHECKSUM` record, binds it
-to the exact ZIP name, calculates SHA-256 locally, and refuses unverified bytes
-before ZIP or CSV parsing begins.
+Day 10: each sample file now has a durable JSON manifest recording its source,
+paths, attempts, checksums, row count, failures, and ordered status history.
+Interrupted runs resume from the last safe checkpoint, while completed reruns
+revalidate the cached bytes without creating another attempt.
 
 ## What the finished system will do
 
@@ -68,7 +69,8 @@ uv run marketpulse fetch-sample --limit 5
 ```
 
 The command prints the archive path, number of parsed candles, first business
-key, locally calculated SHA-256 fingerprint, and `Official checksum: verified`.
+key, locally calculated SHA-256 fingerprint, `Official checksum: verified`, and
+the durable manifest's path, status, and attempt count.
 It downloads both the ZIP and Binance's matching `.CHECKSUM` through the bounded
 HTTP client. Candidate files remain private until the checksum names the exact
 source archive and the locally calculated digest matches. A mismatch preserves
@@ -79,6 +81,8 @@ mapping and safety boundaries, and the
 classification and retry behavior. The
 [checksum verification policy](docs/ingestion/checksum-verification.md) explains
 the trust boundary, strict file format, cache behavior, and failure evidence.
+The [ingestion manifest guide](docs/ingestion/manifest.md) explains every state,
+restart decision, and the evidence kept after a failure.
 
 ## Developer setup
 
