@@ -325,7 +325,7 @@ class ManifestStore:
         if not detail:
             raise ValueError("error must not be empty")
         record, document = self._get(source_url)
-        if record.status in {ManifestStatus.PLANNED, ManifestStatus.PROCESSED}:
+        if record.status is ManifestStatus.PLANNED:
             self._invalid(record.status, ManifestStatus.FAILED)
         return self._transition(
             document,

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import csv
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from io import TextIOWrapper
 from pathlib import Path, PurePosixPath
@@ -23,6 +23,12 @@ from marketpulse.ingestion.checksum import (
     verify_sha256,
 )
 from marketpulse.ingestion.http_client import HttpClient, HttpClientError
+from marketpulse.ingestion.manifest import (
+    ManifestError,
+    ManifestRecord,
+    ManifestStatus,
+    ManifestStore,
+)
 
 SAMPLE_ARCHIVE_NAME = "BTCUSDT-1m-2024-01-01.zip"
 SAMPLE_MEMBER_NAME = "BTCUSDT-1m-2024-01-01.csv"
@@ -30,6 +36,7 @@ SAMPLE_URL = f"https://data.binance.vision/data/spot/daily/klines/BTCUSDT/1m/{SA
 SAMPLE_CHECKSUM_NAME = f"{SAMPLE_ARCHIVE_NAME}.CHECKSUM"
 SAMPLE_CHECKSUM_URL = f"{SAMPLE_URL}.CHECKSUM"
 DEFAULT_SAMPLE_DIRECTORY = Path("data/samples")
+DEFAULT_MANIFEST_NAME = "ingestion-manifest.json"
 MAX_DOWNLOAD_BYTES = 5 * 1024 * 1024
 MAX_UNCOMPRESSED_BYTES = 10 * 1024 * 1024
 MAX_SAMPLE_ROWS = 100
@@ -58,6 +65,9 @@ class SampleBatch:
     candles: tuple[MarketCandle, ...]
     checksum_path: Path | None = None
     official_checksum_verified: bool = False
+    manifest_path: Path | None = None
+    manifest_status: ManifestStatus | None = None
+    manifest_attempts: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,6 +153,30 @@ def _read_official_checksum(checksum_path: Path) -> PublishedChecksum:
         raise SampleIntegrityError(
             f"official checksum is unavailable or invalid: {exc}; rerun with --force"
         ) from exc
+
+
+def _verify_cached_pair(archive_path: Path, checksum_path: Path) -> str:
+    """Tie an existing archive to the matching official checksum file."""
+    published = _read_official_checksum(checksum_path)
+    try:
+        return verify_sha256(archive_path, expected_sha256=published.sha256)
+    except ChecksumError as exc:
+        raise SampleIntegrityError(
+            f"could not verify ZIP archive {archive_path}: {exc}; rerun with --force"
+        ) from exc
+
+
+def _with_manifest(
+    batch: SampleBatch,
+    store: ManifestStore,
+    record: ManifestRecord,
+) -> SampleBatch:
+    return replace(
+        batch,
+        manifest_path=store.path,
+        manifest_status=record.status,
+        manifest_attempts=record.attempts,
+    )
 
 
 def milliseconds_to_utc(value: str | int) -> datetime:
@@ -284,26 +318,88 @@ def fetch_sample(
     *,
     limit: int = 5,
     force: bool = False,
+    manifest_path: Path | None = None,
+    http_client: HttpClient | None = None,
 ) -> SampleBatch:
-    """Download the fixed sample when needed and return its first validated candles."""
-    archive_path = Path(output_directory) / SAMPLE_ARCHIVE_NAME
-    checksum_path = Path(output_directory) / SAMPLE_CHECKSUM_NAME
-    if force or not archive_path.is_file() or not checksum_path.is_file():
-        verified = download_sample(
-            archive_path,
-            checksum_destination=checksum_path,
-        )
-        expected_sha256 = verified.sha256
-    elif not 0 < archive_path.stat().st_size <= MAX_DOWNLOAD_BYTES:
-        raise SampleDownloadError(
-            "cached sample is empty or exceeds the download safety limit; rerun with --force"
-        )
-    else:
-        expected_sha256 = _read_official_checksum(checksum_path).sha256
-
-    return read_sample_archive(
-        archive_path,
-        limit=limit,
-        expected_sha256=expected_sha256,
+    """Resume the fixed sample ingestion from its latest durable checkpoint."""
+    output_directory = Path(output_directory)
+    archive_path = output_directory / SAMPLE_ARCHIVE_NAME
+    checksum_path = output_directory / SAMPLE_CHECKSUM_NAME
+    store = ManifestStore(manifest_path or output_directory / DEFAULT_MANIFEST_NAME)
+    record = store.plan(
+        source_url=SAMPLE_URL,
+        checksum_url=SAMPLE_CHECKSUM_URL,
+        archive_path=archive_path,
         checksum_path=checksum_path,
     )
+
+    try:
+        if record.status is ManifestStatus.PROCESSED and not force:
+            expected_sha256 = _verify_cached_pair(archive_path, checksum_path)
+            batch = read_sample_archive(
+                archive_path,
+                limit=limit,
+                expected_sha256=expected_sha256,
+                checksum_path=checksum_path,
+            )
+            return _with_manifest(batch, store, record)
+
+        if force or record.status in {
+            ManifestStatus.PLANNED,
+            ManifestStatus.DOWNLOADING,
+            ManifestStatus.FAILED,
+        }:
+            record = store.begin_attempt(SAMPLE_URL)
+            cache_is_bounded = (
+                archive_path.is_file()
+                and checksum_path.is_file()
+                and 0 < archive_path.stat().st_size <= MAX_DOWNLOAD_BYTES
+            )
+            if cache_is_bounded and not force:
+                expected_sha256 = _verify_cached_pair(archive_path, checksum_path)
+            else:
+                verified = download_sample(
+                    archive_path,
+                    checksum_destination=checksum_path,
+                    http_client=http_client,
+                )
+                expected_sha256 = verified.sha256
+            record = store.mark_downloaded(
+                SAMPLE_URL,
+                bytes_written=archive_path.stat().st_size,
+            )
+            record = store.mark_verified(
+                SAMPLE_URL,
+                expected_sha256=expected_sha256,
+                calculated_sha256=expected_sha256,
+            )
+        elif record.status is ManifestStatus.DOWNLOADED:
+            expected_sha256 = _verify_cached_pair(archive_path, checksum_path)
+            record = store.mark_verified(
+                SAMPLE_URL,
+                expected_sha256=expected_sha256,
+                calculated_sha256=expected_sha256,
+            )
+        elif record.status in {ManifestStatus.VERIFIED, ManifestStatus.PROCESSING}:
+            if record.calculated_sha256 is None:
+                raise SampleIntegrityError("verified checkpoint has no calculated checksum")
+            expected_sha256 = record.calculated_sha256
+        else:
+            raise SampleDownloadError(f"cannot resume sample from {record.status.value}")
+
+        record = store.mark_processing(SAMPLE_URL)
+        batch = read_sample_archive(
+            archive_path,
+            limit=limit,
+            expected_sha256=expected_sha256,
+            checksum_path=checksum_path,
+        )
+        record = store.mark_processed(SAMPLE_URL, rows_processed=len(batch.candles))
+        return _with_manifest(batch, store, record)
+    except ManifestError:
+        raise
+    except (SampleDownloadError, SampleIntegrityError, SampleFormatError) as exc:
+        current = store.load().records[SAMPLE_URL]
+        if current.status is not ManifestStatus.PLANNED:
+            store.mark_failed(SAMPLE_URL, error=str(exc))
+        raise

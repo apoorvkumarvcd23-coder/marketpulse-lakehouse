@@ -9,6 +9,7 @@ from pathlib import Path
 from marketpulse.doctor import format_doctor_report, run_doctor
 from marketpulse.ingestion import (
     MAX_SAMPLE_ROWS,
+    ManifestError,
     SampleDownloadError,
     SampleFormatError,
     SampleIntegrityError,
@@ -78,7 +79,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 limit=arguments.limit,
                 force=arguments.force,
             )
-        except (SampleDownloadError, SampleFormatError, SampleIntegrityError) as exc:
+        except (
+            ManifestError,
+            SampleDownloadError,
+            SampleFormatError,
+            SampleIntegrityError,
+        ) as exc:
             parser.error(str(exc))
 
         first = batch.candles[0]
@@ -91,6 +97,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Archive SHA-256: {batch.archive_sha256}")
         verification = "verified" if batch.official_checksum_verified else "not verified"
         print(f"Official checksum: {verification}")
+        print(f"Manifest: {batch.manifest_path}")
+        print(
+            f"Manifest status: {batch.manifest_status.value} (attempts: {batch.manifest_attempts})"
+        )
         return 0
 
     parser.error(f"unknown command: {arguments.command}")

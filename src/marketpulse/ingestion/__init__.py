@@ -1,6 +1,7 @@
 """Bounded ingestion helpers for untrusted public market data."""
 
 from marketpulse.ingestion.binance_sample import (
+    DEFAULT_MANIFEST_NAME,
     MAX_SAMPLE_ROWS,
     SAMPLE_ARCHIVE_NAME,
     SAMPLE_CHECKSUM_NAME,
@@ -54,6 +55,7 @@ from marketpulse.ingestion.manifest import (
 )
 
 __all__ = [
+    "DEFAULT_MANIFEST_NAME",
     "MAX_SAMPLE_ROWS",
     "MAX_CHECKSUM_FILE_BYTES",
     "MAX_MANIFEST_BYTES",
