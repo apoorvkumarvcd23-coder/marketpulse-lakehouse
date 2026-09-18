@@ -2,10 +2,13 @@
 
 from marketpulse.ingestion.binance_sample import (
     DEFAULT_MANIFEST_NAME,
+    DEFAULT_RAW_LAKE_ROOT,
+    DEFAULT_SAMPLE_DIRECTORY,
     MAX_SAMPLE_ROWS,
     SAMPLE_ARCHIVE_NAME,
     SAMPLE_CHECKSUM_NAME,
     SAMPLE_CHECKSUM_URL,
+    SAMPLE_RAW_PARTITION,
     SAMPLE_URL,
     SampleBatch,
     SampleDownloadError,
@@ -55,13 +58,16 @@ from marketpulse.ingestion.manifest import (
 )
 
 __all__ = [
+    "DEFAULT_RAW_LAKE_ROOT",
     "DEFAULT_MANIFEST_NAME",
+    "DEFAULT_SAMPLE_DIRECTORY",
     "MAX_SAMPLE_ROWS",
     "MAX_CHECKSUM_FILE_BYTES",
     "MAX_MANIFEST_BYTES",
     "SAMPLE_ARCHIVE_NAME",
     "SAMPLE_CHECKSUM_NAME",
     "SAMPLE_CHECKSUM_URL",
+    "SAMPLE_RAW_PARTITION",
     "SAMPLE_URL",
     "ChecksumError",
     "ChecksumFormatError",

@@ -14,9 +14,11 @@ import pytest
 
 from marketpulse.ingestion import binance_sample
 from marketpulse.ingestion.binance_sample import (
+    DEFAULT_SAMPLE_DIRECTORY,
     SAMPLE_ARCHIVE_NAME,
     SAMPLE_CHECKSUM_NAME,
     SAMPLE_MEMBER_NAME,
+    SAMPLE_RAW_PARTITION,
     SampleDownloadError,
     SampleFormatError,
     SampleIntegrityError,
@@ -121,6 +123,13 @@ def test_archive_rows_become_trusted_market_candles(tmp_path: Path) -> None:
     assert first.source_file == SAMPLE_MEMBER_NAME
     assert first.checksum == sha256_file(archive_path) == batch.archive_sha256
     assert first.run_id == batch.candles[1].run_id == RUN_ID
+
+
+def test_default_sample_location_uses_the_raw_lake_partition() -> None:
+    assert DEFAULT_SAMPLE_DIRECTORY.as_posix() == (
+        "data/raw/source=binance/dataset=klines/interval=1m/symbol=BTCUSDT/year=2024/month=01"
+    )
+    assert SAMPLE_RAW_PARTITION.symbol == "BTCUSDT"
 
 
 def test_row_limit_bounds_the_learning_sample(tmp_path: Path) -> None:

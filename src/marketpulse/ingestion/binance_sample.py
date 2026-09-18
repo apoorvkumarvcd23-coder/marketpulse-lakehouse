@@ -29,13 +29,23 @@ from marketpulse.ingestion.manifest import (
     ManifestStatus,
     ManifestStore,
 )
+from marketpulse.storage import RawLake, RawLakePartition
 
 SAMPLE_ARCHIVE_NAME = "BTCUSDT-1m-2024-01-01.zip"
 SAMPLE_MEMBER_NAME = "BTCUSDT-1m-2024-01-01.csv"
 SAMPLE_URL = f"https://data.binance.vision/data/spot/daily/klines/BTCUSDT/1m/{SAMPLE_ARCHIVE_NAME}"
 SAMPLE_CHECKSUM_NAME = f"{SAMPLE_ARCHIVE_NAME}.CHECKSUM"
 SAMPLE_CHECKSUM_URL = f"{SAMPLE_URL}.CHECKSUM"
-DEFAULT_SAMPLE_DIRECTORY = Path("data/samples")
+DEFAULT_RAW_LAKE_ROOT = Path("data/raw")
+SAMPLE_RAW_PARTITION = RawLakePartition(
+    source="binance",
+    dataset="klines",
+    interval="1m",
+    symbol="BTCUSDT",
+    year=2024,
+    month=1,
+)
+DEFAULT_SAMPLE_DIRECTORY = RawLake(DEFAULT_RAW_LAKE_ROOT).directory_for(SAMPLE_RAW_PARTITION)
 DEFAULT_MANIFEST_NAME = "ingestion-manifest.json"
 MAX_DOWNLOAD_BYTES = 5 * 1024 * 1024
 MAX_UNCOMPRESSED_BYTES = 10 * 1024 * 1024
