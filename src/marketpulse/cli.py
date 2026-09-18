@@ -8,6 +8,7 @@ from pathlib import Path
 
 from marketpulse.doctor import format_doctor_report, run_doctor
 from marketpulse.ingestion import (
+    DEFAULT_SAMPLE_DIRECTORY,
     MAX_SAMPLE_ROWS,
     ManifestError,
     SampleDownloadError,
@@ -45,8 +46,11 @@ def build_parser() -> argparse.ArgumentParser:
     fetch.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("data/samples"),
-        help="ignored local directory for the ZIP (default: data/samples)",
+        default=DEFAULT_SAMPLE_DIRECTORY,
+        help=(
+            "ignored local directory for the ZIP; default is the partitioned "
+            "data/raw Binance BTCUSDT 1m January-2024 location"
+        ),
     )
     fetch.add_argument(
         "--limit",

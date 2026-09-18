@@ -12,6 +12,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 
+from marketpulse import cli
 from marketpulse.ingestion import binance_sample
 from marketpulse.ingestion.binance_sample import (
     DEFAULT_SAMPLE_DIRECTORY,
@@ -130,6 +131,12 @@ def test_default_sample_location_uses_the_raw_lake_partition() -> None:
         "data/raw/source=binance/dataset=klines/interval=1m/symbol=BTCUSDT/year=2024/month=01"
     )
     assert SAMPLE_RAW_PARTITION.symbol == "BTCUSDT"
+
+
+def test_cli_defaults_to_the_raw_lake_partition() -> None:
+    arguments = cli.build_parser().parse_args(["fetch-sample"])
+
+    assert arguments.output_dir == DEFAULT_SAMPLE_DIRECTORY
 
 
 def test_row_limit_bounds_the_learning_sample(tmp_path: Path) -> None:

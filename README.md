@@ -13,6 +13,9 @@ paths, attempts, checksums, row count, failures, and ordered status history.
 Interrupted runs resume from the last safe checkpoint, while completed reruns
 revalidate the cached bytes without creating another attempt.
 
+Day 11: source files now land in an ignored, predictable raw data-lake layout
+partitioned by source, dataset, interval, symbol, year, and month.
+
 ## What the finished system will do
 
 1. Download two years of one-minute BTC/USDT, ETH/USDT, and SOL/USDT candles.
@@ -83,6 +86,11 @@ classification and retry behavior. The
 the trust boundary, strict file format, cache behavior, and failure evidence.
 The [ingestion manifest guide](docs/ingestion/manifest.md) explains every state,
 restart decision, and the evidence kept after a failure.
+
+The default location is now the raw data-lake partition for the file rather than
+an unlabelled sample folder. See the [raw-lake layout guide](docs/storage/raw-lake-layout.md)
+for the directory convention, safe path validation, and an interview-ready
+explanation of the choice.
 
 ## Developer setup
 
