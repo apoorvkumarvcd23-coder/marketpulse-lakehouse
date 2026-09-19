@@ -8,6 +8,7 @@ from uuid import UUID
 
 import duckdb
 
+from marketpulse import cli
 from marketpulse.contracts import MarketCandle
 from marketpulse.ingestion.dlt_candles import (
     DLT_DATASET_NAME,
@@ -103,3 +104,41 @@ def test_empty_incremental_run_is_safe_after_the_cursor_is_saved(tmp_path: Path)
 
     assert result.submitted_rows == 0
     assert _stored_rows(destination)[0][0] == "BTCUSDT"
+
+
+def test_cli_load_sample_connects_trusted_candles_to_dlt(
+    tmp_path: Path, monkeypatch: object, capsys: object
+) -> None:
+    destination = tmp_path / "marketpulse.duckdb"
+    observed: dict[str, object] = {}
+
+    def fake_fetch(output_directory: Path, *, limit: int) -> object:
+        observed["source"] = output_directory
+        observed["limit"] = limit
+        return type("Batch", (), {"candles": (_candle(0),)})()
+
+    def fake_load(candles: object, *, destination_path: Path) -> object:
+        observed["candles"] = candles
+        observed["destination"] = destination_path
+        return type(
+            "Result",
+            (),
+            {
+                "submitted_rows": 1,
+                "destination_path": destination_path,
+                "load_ids": ("test-load",),
+            },
+        )()
+
+    monkeypatch.setattr(cli, "fetch_sample", fake_fetch)
+    monkeypatch.setattr(cli, "load_incremental_candles", fake_load)
+
+    assert (
+        cli.main(
+            ["load-sample", "--output-dir", "data/raw-test", "--destination", str(destination)]
+        )
+        == 0
+    )
+    assert observed["source"] == Path("data/raw-test")
+    assert observed["destination"] == destination
+    assert "Loaded: 1 trusted candle(s)" in capsys.readouterr().out

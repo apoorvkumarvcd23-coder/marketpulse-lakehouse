@@ -8,13 +8,16 @@ from pathlib import Path
 
 from marketpulse.doctor import format_doctor_report, run_doctor
 from marketpulse.ingestion import (
+    DEFAULT_DLT_DESTINATION,
     DEFAULT_SAMPLE_DIRECTORY,
     MAX_SAMPLE_ROWS,
+    DltCandleLoad,
     ManifestError,
     SampleDownloadError,
     SampleFormatError,
     SampleIntegrityError,
     fetch_sample,
+    load_incremental_candles,
 )
 
 
@@ -63,6 +66,28 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="replace an existing local copy with one fresh download",
     )
+    load_sample = commands.add_parser(
+        "load-sample",
+        help="incrementally merge the trusted learning sample into local DuckDB",
+    )
+    load_sample.add_argument(
+        "--output-dir",
+        type=Path,
+        default=DEFAULT_SAMPLE_DIRECTORY,
+        help="raw sample directory to read before loading",
+    )
+    load_sample.add_argument(
+        "--destination",
+        type=Path,
+        default=DEFAULT_DLT_DESTINATION,
+        help="ignored local DuckDB destination for the incremental table",
+    )
+    load_sample.add_argument(
+        "--limit",
+        type=_sample_limit,
+        default=5,
+        help=f"number of trusted sample candles to load, from 1 to {MAX_SAMPLE_ROWS}",
+    )
     return parser
 
 
@@ -105,6 +130,26 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"Manifest status: {batch.manifest_status.value} (attempts: {batch.manifest_attempts})"
         )
+        return 0
+
+    if arguments.command == "load-sample":
+        try:
+            batch = fetch_sample(arguments.output_dir, limit=arguments.limit)
+            result: DltCandleLoad = load_incremental_candles(
+                batch.candles,
+                destination_path=arguments.destination,
+            )
+        except (
+            ManifestError,
+            SampleDownloadError,
+            SampleFormatError,
+            SampleIntegrityError,
+        ) as exc:
+            parser.error(str(exc))
+
+        print(f"Loaded: {result.submitted_rows} trusted candle(s)")
+        print(f"DuckDB: {result.destination_path}")
+        print(f"dlt load ID(s): {', '.join(result.load_ids) or '<none>'}")
         return 0
 
     parser.error(f"unknown command: {arguments.command}")
