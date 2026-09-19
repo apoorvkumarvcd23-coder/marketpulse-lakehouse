@@ -32,6 +32,15 @@ from marketpulse.ingestion.checksum import (
     read_sha256_checksum,
     verify_sha256,
 )
+from marketpulse.ingestion.dlt_candles import (
+    DEFAULT_DLT_DESTINATION,
+    DLT_DATASET_NAME,
+    DLT_PIPELINE_NAME,
+    DLT_TABLE_NAME,
+    DltCandleLoad,
+    incremental_candles,
+    load_incremental_candles,
+)
 from marketpulse.ingestion.http_client import (
     DownloadReceipt,
     HttpClient,
@@ -58,6 +67,7 @@ from marketpulse.ingestion.manifest import (
 )
 
 __all__ = [
+    "DEFAULT_DLT_DESTINATION",
     "DEFAULT_RAW_LAKE_ROOT",
     "DEFAULT_MANIFEST_NAME",
     "DEFAULT_SAMPLE_DIRECTORY",
@@ -74,6 +84,10 @@ __all__ = [
     "ChecksumMismatchError",
     "ChecksumReadError",
     "DownloadReceipt",
+    "DLT_DATASET_NAME",
+    "DLT_PIPELINE_NAME",
+    "DLT_TABLE_NAME",
+    "DltCandleLoad",
     "HttpClient",
     "HttpClientError",
     "HttpEmptyResponse",
@@ -100,6 +114,8 @@ __all__ = [
     "VerifiedSampleDownload",
     "download_sample",
     "fetch_sample",
+    "incremental_candles",
+    "load_incremental_candles",
     "milliseconds_to_utc",
     "parse_sha256_checksum",
     "read_sha256_checksum",
