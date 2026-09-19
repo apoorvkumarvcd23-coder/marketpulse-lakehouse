@@ -16,6 +16,9 @@ revalidate the cached bytes without creating another attempt.
 Day 11: source files now land in an ignored, predictable raw data-lake layout
 partitioned by source, dataset, interval, symbol, year, and month.
 
+Day 12: trusted candles can now load incrementally into a local DuckDB table
+through dlt, using an open_time cursor and the candle business key for merge.
+
 ## What the finished system will do
 
 1. Download two years of one-minute BTC/USDT, ETH/USDT, and SOL/USDT candles.
@@ -91,6 +94,17 @@ The default location is now the raw data-lake partition for the file rather than
 an unlabelled sample folder. See the [raw-lake layout guide](docs/storage/raw-lake-layout.md)
 for the directory convention, safe path validation, and an interview-ready
 explanation of the choice.
+
+## Incremental local load
+
+The first small incremental path loads already trusted candle records into an
+ignored DuckDB database. It is local-only and intentionally remains separate
+from raw source storage and manifest recovery:
+
+    uv run marketpulse load-sample --limit 5
+
+See the [dlt incremental loading guide](docs/ingestion/dlt-incremental.md) for
+the cursor, merge key, local state location, and current limits.
 
 ## Developer setup
 
