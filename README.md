@@ -19,6 +19,9 @@ partitioned by source, dataset, interval, symbol, year, and month.
 Day 12: trusted candles can now load incrementally into a local DuckDB table
 through dlt, using an open_time cursor and the candle business key for merge.
 
+Day 13: the local DuckDB table now has a read-only, parameterized candle
+summary command for checking counts, price ranges, and volumes by UTC window.
+
 ## What the finished system will do
 
 1. Download two years of one-minute BTC/USDT, ETH/USDT, and SOL/USDT candles.
@@ -105,6 +108,18 @@ from raw source storage and manifest recovery:
 
 See the [dlt incremental loading guide](docs/ingestion/dlt-incremental.md) for
 the cursor, merge key, local state location, and current limits.
+
+## Inspect trusted local candles
+
+After loading the learning sample, inspect a UTC time window without changing
+the database:
+
+```powershell
+uv run marketpulse analyze-local --start 2024-01-01T00:00:00Z --end 2024-01-01T00:05:00Z
+```
+
+See the [local DuckDB analysis guide](docs/analysis/local-duckdb.md) for the
+read-only boundary, parameterized query design, and empty-window behavior.
 
 ## Developer setup
 

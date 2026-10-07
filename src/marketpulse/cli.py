@@ -203,21 +203,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         except (DuckDbAnalysisError, ValueError) as exc:
             parser.error(str(exc))
 
+        first_open = summary.first_open_time.isoformat() if summary.first_open_time else "<none>"
+        last_open = summary.last_open_time.isoformat() if summary.last_open_time else "<none>"
+        lowest_price = summary.lowest_price if summary.lowest_price is not None else "<none>"
+        highest_price = summary.highest_price if summary.highest_price is not None else "<none>"
         print(f"Symbol: {summary.symbol.value}")
         print(f"Interval: {summary.interval.value}")
         print(f"Candles: {summary.candle_count}")
-        print(
-            f"First open: {summary.first_open_time.isoformat() if summary.first_open_time else '<none>'}"
-        )
-        print(
-            f"Last open: {summary.last_open_time.isoformat() if summary.last_open_time else '<none>'}"
-        )
-        print(
-            f"Lowest price: {summary.lowest_price if summary.lowest_price is not None else '<none>'}"
-        )
-        print(
-            f"Highest price: {summary.highest_price if summary.highest_price is not None else '<none>'}"
-        )
+        print(f"First open: {first_open}")
+        print(f"Last open: {last_open}")
+        print(f"Lowest price: {lowest_price}")
+        print(f"Highest price: {highest_price}")
         print(f"Total volume: {summary.total_volume}")
         return 0
 
