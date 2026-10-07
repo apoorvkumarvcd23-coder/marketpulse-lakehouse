@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 
+from marketpulse.analysis import DuckDbAnalysisError, summarize_candles
+from marketpulse.contracts import MarketSymbol
 from marketpulse.doctor import format_doctor_report, run_doctor
 from marketpulse.ingestion import (
     DEFAULT_DLT_DESTINATION,
@@ -29,6 +32,17 @@ def _sample_limit(value: str) -> int:
     if not 1 <= limit <= MAX_SAMPLE_ROWS:
         raise argparse.ArgumentTypeError(f"limit must be between 1 and {MAX_SAMPLE_ROWS}")
     return limit
+
+
+def _utc_timestamp(value: str) -> datetime:
+    """Parse an ISO-8601 timestamp and require an explicit timezone."""
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("timestamp must use ISO-8601 format") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise argparse.ArgumentTypeError("timestamp must include a timezone, such as +00:00")
+    return parsed.astimezone(UTC)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -87,6 +101,32 @@ def build_parser() -> argparse.ArgumentParser:
         type=_sample_limit,
         default=5,
         help=f"number of trusted sample candles to load, from 1 to {MAX_SAMPLE_ROWS}",
+    )
+    analyze = commands.add_parser(
+        "analyze-local",
+        help="summarize trusted candles in the local DuckDB destination",
+    )
+    analyze.add_argument(
+        "--symbol",
+        choices=[symbol.value for symbol in MarketSymbol],
+        default=MarketSymbol.BTC_USDT.value,
+        help="trading pair to summarize (default: BTCUSDT)",
+    )
+    analyze.add_argument(
+        "--start",
+        type=_utc_timestamp,
+        help="inclusive ISO-8601 UTC window start, for example 2024-01-01T00:00:00Z",
+    )
+    analyze.add_argument(
+        "--end",
+        type=_utc_timestamp,
+        help="exclusive ISO-8601 UTC window end, for example 2024-01-02T00:00:00Z",
+    )
+    analyze.add_argument(
+        "--destination",
+        type=Path,
+        default=DEFAULT_DLT_DESTINATION,
+        help="ignored local DuckDB destination to query",
     )
     return parser
 
@@ -150,6 +190,35 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Loaded: {result.submitted_rows} trusted candle(s)")
         print(f"DuckDB: {result.destination_path}")
         print(f"dlt load ID(s): {', '.join(result.load_ids) or '<none>'}")
+        return 0
+
+    if arguments.command == "analyze-local":
+        try:
+            summary = summarize_candles(
+                symbol=MarketSymbol(arguments.symbol),
+                start=arguments.start,
+                end=arguments.end,
+                destination_path=arguments.destination,
+            )
+        except (DuckDbAnalysisError, ValueError) as exc:
+            parser.error(str(exc))
+
+        print(f"Symbol: {summary.symbol.value}")
+        print(f"Interval: {summary.interval.value}")
+        print(f"Candles: {summary.candle_count}")
+        print(
+            f"First open: {summary.first_open_time.isoformat() if summary.first_open_time else '<none>'}"
+        )
+        print(
+            f"Last open: {summary.last_open_time.isoformat() if summary.last_open_time else '<none>'}"
+        )
+        print(
+            f"Lowest price: {summary.lowest_price if summary.lowest_price is not None else '<none>'}"
+        )
+        print(
+            f"Highest price: {summary.highest_price if summary.highest_price is not None else '<none>'}"
+        )
+        print(f"Total volume: {summary.total_volume}")
         return 0
 
     parser.error(f"unknown command: {arguments.command}")

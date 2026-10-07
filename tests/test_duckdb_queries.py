@@ -1,12 +1,14 @@
 """Tests for read-only aggregates over the Day 12 dlt destination."""
 
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 from uuid import UUID
 
 import pytest
 
-from marketpulse.analysis import DuckDbAnalysisError, summarize_candles
+from marketpulse import cli
+from marketpulse.analysis import CandleSummary, DuckDbAnalysisError, summarize_candles
 from marketpulse.contracts import MarketCandle, MarketSymbol
 from marketpulse.ingestion import load_incremental_candles
 
@@ -88,3 +90,30 @@ def test_summary_rejects_a_reversed_time_window(tmp_path: Path) -> None:
             end=datetime(2024, 1, 1, tzinfo=UTC),
             destination_path=tmp_path / "unused.duckdb",
         )
+
+
+def test_cli_prints_an_interview_friendly_summary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    destination = tmp_path / "marketpulse.duckdb"
+
+    def fake_summary(**kwargs: object) -> CandleSummary:
+        assert kwargs["destination_path"] == destination
+        assert kwargs["symbol"] == MarketSymbol.BTC_USDT
+        return CandleSummary(
+            symbol=MarketSymbol.BTC_USDT,
+            interval=_candle(0).interval,
+            candle_count=2,
+            first_open_time=datetime(2024, 1, 1, tzinfo=UTC),
+            last_open_time=datetime(2024, 1, 1, 0, 1, tzinfo=UTC),
+            lowest_price=None,
+            highest_price=None,
+            total_volume=Decimal("0"),
+        )
+
+    monkeypatch.setattr(cli, "summarize_candles", fake_summary)
+    assert cli.main(["analyze-local", "--destination", str(destination)]) == 0
+    output = capsys.readouterr().out
+    assert "Symbol: BTCUSDT" in output
+    assert "Candles: 2" in output
+    assert "Lowest price: <none>" in output
