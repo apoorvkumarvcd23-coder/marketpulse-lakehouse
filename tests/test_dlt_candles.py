@@ -146,8 +146,9 @@ def test_cli_load_sample_connects_trusted_candles_to_dlt(
     )
     assert observed["source"] == Path("data/raw-test")
     assert observed["destination"] == destination
-    assert "Loaded: 1 trusted candle(s)" in capsys.readouterr().out
-    assert "Stored BTCUSDT 1m candles: 1" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "Loaded: 1 trusted candle(s)" in output
+    assert "Stored BTCUSDT 1m candles: 1" in output
 
 
 def test_cli_full_sample_rerun_keeps_one_row_per_candle_key(

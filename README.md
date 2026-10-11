@@ -22,6 +22,9 @@ through dlt, using an open_time cursor and the candle business key for merge.
 Day 13: the local DuckDB table now has a read-only, parameterized candle
 summary command for checking counts, price ranges, and volumes by UTC window.
 
+Day 14: a complete local sample rerun is now proven idempotent: running the
+same five trusted candles twice leaves five distinct candle business keys.
+
 ## What the finished system will do
 
 1. Download two years of one-minute BTC/USDT, ETH/USDT, and SOL/USDT candles.
@@ -120,6 +123,9 @@ uv run marketpulse analyze-local --start 2024-01-01T00:00:00Z --end 2024-01-01T0
 
 See the [local DuckDB analysis guide](docs/analysis/local-duckdb.md) for the
 read-only boundary, parameterized query design, and empty-window behavior.
+
+See the [idempotent local sample guide](docs/ingestion/idempotent-local-sample.md)
+for the repeat-run command, observable stored total, and test boundary.
 
 ## Developer setup
 
