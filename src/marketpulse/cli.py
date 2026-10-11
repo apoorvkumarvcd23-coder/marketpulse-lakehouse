@@ -179,7 +179,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 batch.candles,
                 destination_path=arguments.destination,
             )
+            summary = summarize_candles(
+                symbol=MarketSymbol.BTC_USDT,
+                destination_path=arguments.destination,
+            )
         except (
+            DuckDbAnalysisError,
             ManifestError,
             SampleDownloadError,
             SampleFormatError,
@@ -188,6 +193,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error(str(exc))
 
         print(f"Loaded: {result.submitted_rows} trusted candle(s)")
+        print(f"Stored BTCUSDT 1m candles: {summary.candle_count}")
         print(f"DuckDB: {result.destination_path}")
         print(f"dlt load ID(s): {', '.join(result.load_ids) or '<none>'}")
         return 0

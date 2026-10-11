@@ -130,8 +130,13 @@ def test_cli_load_sample_connects_trusted_candles_to_dlt(
             },
         )()
 
+    def fake_summary(**kwargs: object) -> object:
+        assert kwargs["destination_path"] == destination
+        return type("Summary", (), {"candle_count": 1})()
+
     monkeypatch.setattr(cli, "fetch_sample", fake_fetch)
     monkeypatch.setattr(cli, "load_incremental_candles", fake_load)
+    monkeypatch.setattr(cli, "summarize_candles", fake_summary)
 
     assert (
         cli.main(
@@ -142,6 +147,7 @@ def test_cli_load_sample_connects_trusted_candles_to_dlt(
     assert observed["source"] == Path("data/raw-test")
     assert observed["destination"] == destination
     assert "Loaded: 1 trusted candle(s)" in capsys.readouterr().out
+    assert "Stored BTCUSDT 1m candles: 1" in capsys.readouterr().out
 
 
 def test_cli_full_sample_rerun_keeps_one_row_per_candle_key(
@@ -171,6 +177,7 @@ def test_cli_full_sample_rerun_keeps_one_row_per_candle_key(
     assert cli.main(arguments) == 0
     output = capsys.readouterr().out
     assert output.count("Loaded: 5 trusted candle(s)") == 2
+    assert "Stored BTCUSDT 1m candles: 5" in output
     connection = duckdb.connect(str(destination), read_only=True)
     try:
         row_count, distinct_keys = connection.execute(
