@@ -142,3 +142,43 @@ def test_cli_load_sample_connects_trusted_candles_to_dlt(
     assert observed["source"] == Path("data/raw-test")
     assert observed["destination"] == destination
     assert "Loaded: 1 trusted candle(s)" in capsys.readouterr().out
+
+
+def test_cli_full_sample_rerun_keeps_one_row_per_candle_key(
+    tmp_path: Path, monkeypatch: object, capsys: object
+) -> None:
+    """Prove the complete command path is idempotent without downloading public bytes."""
+    destination = tmp_path / "marketpulse.duckdb"
+    candles = tuple(_candle(minute) for minute in range(5))
+
+    def fake_fetch(output_directory: Path, *, limit: int) -> object:
+        assert output_directory == Path("data/raw-test")
+        assert limit == 5
+        return type("Batch", (), {"candles": candles})()
+
+    monkeypatch.setattr(cli, "fetch_sample", fake_fetch)
+    arguments = [
+        "load-sample",
+        "--output-dir",
+        "data/raw-test",
+        "--destination",
+        str(destination),
+        "--limit",
+        "5",
+    ]
+
+    assert cli.main(arguments) == 0
+    assert cli.main(arguments) == 0
+    output = capsys.readouterr().out
+    assert output.count("Loaded: 5 trusted candle(s)") == 2
+    connection = duckdb.connect(str(destination), read_only=True)
+    try:
+        row_count, distinct_keys = connection.execute(
+            f"""
+            SELECT COUNT(*), COUNT(DISTINCT (symbol, interval, open_time))
+            FROM {DLT_DATASET_NAME}.{DLT_TABLE_NAME}
+            """
+        ).fetchone()
+    finally:
+        connection.close()
+    assert (row_count, distinct_keys) == (5, 5)
