@@ -1,5 +1,16 @@
 # MarketPulse Lakehouse — December 2026 implementation plan
 
+## Immediate core milestone — 17 November 2026
+
+The core is needed for resume demonstrations within the next ten days. On
+10 November build a bounded one-day BTC/ETH/SOL source-to-Parquet/DuckDB path,
+UTC/decimal validation, checksum/recovery boundaries, per-symbol idempotency,
+SQL summaries and a minimal read-only dashboard. Use a small offline fixture
+and record one real public-source run. Verify the clean integration demo on
+15 November and final core acceptance on 17 November. dbt, one-month backfills,
+richer analytics and full v1 recovery/measurement work follow through December.
+The fixed five-row sample alone is not the finished core target.
+
 ## Source-grounded starting point
 
 Reviewed main `d8c0e5fe18fd879e9cab015b129f29854b0386a4`: README/90-day roadmap,
