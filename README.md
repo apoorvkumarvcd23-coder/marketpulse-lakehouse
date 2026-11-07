@@ -1,5 +1,12 @@
 # MarketPulse Lakehouse
 
+## December 2026 delivery
+
+The December v1 target is a complete bounded local batch lakehouse. The earlier 90-day cloud/streaming roadmap remains a later phase, not a claim of delivered features.
+
+See the [implementation plan and acceptance checks](docs/IMPLEMENTATION_PLAN.md).
+The target is 31 December 2026; task completion requires verified evidence.
+
 MarketPulse Lakehouse is a 90-day data-engineering portfolio project that will
 turn public cryptocurrency market data into reliable, tested analytics.
 
