@@ -1,5 +1,15 @@
 # 90-Day Roadmap
 
+## Current delivery plan
+
+The historical calendar below is superseded by the
+[November core / December implementation plan](docs/IMPLEMENTATION_PLAN.md).
+The one-day batch core is implemented; clean-clone acceptance remains due by
+17 November 2026. Extensions follow through 31 December. Commit counts follow
+completed cohesive work, with no daily quota. Cloud/live streaming are later scope.
+
+## Historical learning sequence
+
 Day 1 was completed on July 28, 2026, and Day 2 resumed on August 1 after three
 missed dates. No build ran on August 2 or August 3, so Day 3 resumed on August 4.
 No build ran on August 5 or August 6; the user explicitly resumed Day 4 on

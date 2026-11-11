@@ -1,0 +1,103 @@
+{
+  "first": {
+    "run_id": "958c47f2e3834e1aaf8d62a5ebddcd76",
+    "day": "2025-01-01",
+    "mode": "public-source",
+    "created_at": "2026-11-11T00:11:23.889020+00:00",
+    "sources": [
+      {
+        "symbol": "BTCUSDT",
+        "day": "2025-01-01",
+        "url": "https://data.binance.vision/data/spot/daily/klines/BTCUSDT/1m/BTCUSDT-1m-2025-01-01.zip",
+        "timestamp_unit": "us",
+        "sha256": "10a12909f1b0e3fcc6b7f502e5ea9be5d1ba3455dd8ab16cc61c8650640ba7c0",
+        "bytes": 69062,
+        "accepted": 1440,
+        "duplicates": 0,
+        "expected_minutes": 1440
+      },
+      {
+        "symbol": "ETHUSDT",
+        "day": "2025-01-01",
+        "url": "https://data.binance.vision/data/spot/daily/klines/ETHUSDT/1m/ETHUSDT-1m-2025-01-01.zip",
+        "timestamp_unit": "us",
+        "sha256": "26cc71cf7a2bd0232cf0e8aaaf529fc6674ba20059028023eb346232ee4dbf91",
+        "bytes": 66406,
+        "accepted": 1440,
+        "duplicates": 0,
+        "expected_minutes": 1440
+      },
+      {
+        "symbol": "SOLUSDT",
+        "day": "2025-01-01",
+        "url": "https://data.binance.vision/data/spot/daily/klines/SOLUSDT/1m/SOLUSDT-1m-2025-01-01.zip",
+        "timestamp_unit": "us",
+        "sha256": "196968e2317902f3f285c34b8669784972410c338feafbc66f6f354687c03c91",
+        "bytes": 61474,
+        "accepted": 1440,
+        "duplicates": 0,
+        "expected_minutes": 1440
+      }
+    ],
+    "status": "published",
+    "stored_rows": 4320,
+    "distinct_keys": 4320,
+    "parquet_rows": 4320,
+    "rejected": 0
+  },
+  "replay": {
+    "run_id": "8abce3f21dba49f2b9427716163d9d14",
+    "day": "2025-01-01",
+    "mode": "public-source",
+    "created_at": "2026-11-11T00:11:35.408213+00:00",
+    "sources": [
+      {
+        "symbol": "BTCUSDT",
+        "day": "2025-01-01",
+        "url": "https://data.binance.vision/data/spot/daily/klines/BTCUSDT/1m/BTCUSDT-1m-2025-01-01.zip",
+        "timestamp_unit": "us",
+        "sha256": "10a12909f1b0e3fcc6b7f502e5ea9be5d1ba3455dd8ab16cc61c8650640ba7c0",
+        "bytes": 69062,
+        "accepted": 1440,
+        "duplicates": 0,
+        "expected_minutes": 1440
+      },
+      {
+        "symbol": "ETHUSDT",
+        "day": "2025-01-01",
+        "url": "https://data.binance.vision/data/spot/daily/klines/ETHUSDT/1m/ETHUSDT-1m-2025-01-01.zip",
+        "timestamp_unit": "us",
+        "sha256": "26cc71cf7a2bd0232cf0e8aaaf529fc6674ba20059028023eb346232ee4dbf91",
+        "bytes": 66406,
+        "accepted": 1440,
+        "duplicates": 0,
+        "expected_minutes": 1440
+      },
+      {
+        "symbol": "SOLUSDT",
+        "day": "2025-01-01",
+        "url": "https://data.binance.vision/data/spot/daily/klines/SOLUSDT/1m/SOLUSDT-1m-2025-01-01.zip",
+        "timestamp_unit": "us",
+        "sha256": "196968e2317902f3f285c34b8669784972410c338feafbc66f6f354687c03c91",
+        "bytes": 61474,
+        "accepted": 1440,
+        "duplicates": 0,
+        "expected_minutes": 1440
+      }
+    ],
+    "status": "published",
+    "stored_rows": 4320,
+    "distinct_keys": 4320,
+    "parquet_rows": 4320,
+    "rejected": 0
+  },
+  "verified": {
+    "pytest_passed": 162,
+    "fixture_unique_rows": 9,
+    "public_unique_rows": 4320,
+    "public_replay_unique_rows": 4320,
+    "public_zip_bytes": 196942,
+    "source": "Binance public spot daily klines; no account keys",
+    "release": "No tag; final clean-clone acceptance remains pending"
+  }
+}

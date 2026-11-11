@@ -16,6 +16,25 @@ building one coherent system rather than a collection of unrelated exercises.
 
 ## Current status
 
+**11 November 2026: runnable one-day BTC/ETH/SOL batch core.** Verified archives
+flow through UTC/decimal validation, dlt business-key merge, partitioned Parquet
+and DuckDB daily SQL summaries to a read-only Streamlit dashboard. A real
+2025-01-01 run and replay each reconcile **4,320 unique candles**. Failed updates
+retain the previous immutable snapshot. See [the batch runbook](docs/BATCH_RUNBOOK.md),
+[recorded public-source evidence](docs/public-run-2026-11-11.json) and
+[claim ledger](docs/CLAIM_EVIDENCE.md). Final clean-clone acceptance is still due.
+
+```powershell
+uv sync --locked
+uv run marketpulse make-fixture
+uv run marketpulse batch-day --date 2024-01-01 --fixture-dir data/fixture
+uv run streamlit run src/marketpulse/dashboard.py --server.address 127.0.0.1
+```
+
+Open http://localhost:8501. The synthetic fixture deliberately contains only
+three minutes per symbol; the view labels its incomplete historical coverage.
+The earlier fixed-sample milestones below remain available as the offline baseline.
+
 Day 10: each sample file now has a durable JSON manifest recording its source,
 paths, attempts, checksums, row count, failures, and ordered status history.
 Interrupted runs resume from the last safe checkpoint, while completed reruns
@@ -33,7 +52,7 @@ summary command for checking counts, price ranges, and volumes by UTC window.
 Day 14: a complete local sample rerun is now proven idempotent: running the
 same five trusted candles twice leaves five distinct candle business keys.
 
-## What the finished system will do
+## Later cloud/streaming roadmap (not implemented)
 
 1. Download two years of one-minute BTC/USDT, ETH/USDT, and SOL/USDT candles.
 2. Verify source checksums and quarantine invalid data.

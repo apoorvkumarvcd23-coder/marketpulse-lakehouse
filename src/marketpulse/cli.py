@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from marketpulse.analysis import DuckDbAnalysisError, summarize_candles
@@ -56,6 +57,15 @@ def build_parser() -> argparse.ArgumentParser:
         "doctor",
         help="explain and verify the basic local project setup",
     )
+    daily = commands.add_parser("batch-day", help="plan or publish one bounded UTC archive day")
+    daily.add_argument("--date", type=date.fromisoformat, required=True)
+    daily.add_argument("--symbols", nargs="+", default=[s.value for s in MarketSymbol])
+    daily.add_argument("--root", type=Path, default=Path("data/batch"))
+    daily.add_argument("--fixture-dir", type=Path)
+    daily.add_argument("--dry-run", action="store_true")
+    fixture = commands.add_parser("make-fixture", help="write tiny synthetic offline archives")
+    fixture.add_argument("--output-dir", type=Path, default=Path("data/fixture"))
+    fixture.add_argument("--date", type=date.fromisoformat, default=date(2024, 1, 1))
     fetch = commands.add_parser(
         "fetch-sample",
         help="download and parse a small fixed BTCUSDT candle sample",
@@ -135,6 +145,41 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run the requested command and return a process exit code."""
     parser = build_parser()
     arguments = parser.parse_args(argv)
+
+    if arguments.command in {"batch-day", "make-fixture"}:
+        from marketpulse.batch import ARCHIVE_LIMIT, create_fixture, plan, run_batch
+
+        try:
+            if arguments.command == "make-fixture":
+                create_fixture(arguments.output_dir, arguments.date)
+                print("Created synthetic three-minute archives (not market observations)")
+            elif arguments.dry_run:
+                sources = plan(arguments.date, arguments.symbols)
+                print(
+                    json.dumps(
+                        {
+                            "archives": [s.url for s in sources],
+                            "max_archive_bytes": len(sources) * ARCHIVE_LIMIT,
+                            "max_files_including_checksums": len(sources) * 2,
+                        },
+                        indent=2,
+                    )
+                )
+            else:
+                print(
+                    json.dumps(
+                        run_batch(
+                            arguments.date,
+                            root=arguments.root,
+                            symbols=arguments.symbols,
+                            fixture_dir=arguments.fixture_dir,
+                        ),
+                        indent=2,
+                    )
+                )
+        except (ValueError, OSError, RuntimeError) as exc:
+            parser.error(str(exc))
+        return 0
 
     if arguments.command == "doctor":
         report = run_doctor(Path.cwd())

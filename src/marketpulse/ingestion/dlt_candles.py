@@ -62,3 +62,25 @@ def load_incremental_candles(
         submitted_rows=len(prepared_candles),
         load_ids=tuple(str(load_id) for load_id in load_info.loads_ids),
     )
+
+
+@dlt.resource(
+    name=DLT_TABLE_NAME,
+    primary_key=["symbol", "interval", "open_time"],
+    write_disposition="merge",
+)
+def bounded_candles(candles: Iterable[MarketCandle]) -> Iterable[dict[str, object]]:
+    """Explicit backfills merge every supplied key, without a global time cursor."""
+    for candle in candles:
+        yield candle.model_dump(mode="json")
+
+
+def load_bounded_candles(candles: Iterable[MarketCandle], destination: Path) -> None:
+    """Load a fully validated bounded batch into a private candidate database."""
+    pipeline = dlt.pipeline(
+        pipeline_name="marketpulse_bounded_batch",
+        pipelines_dir=str(destination.parent / ".dlt"),
+        destination=dlt.destinations.duckdb(str(destination)),
+        dataset_name=DLT_DATASET_NAME,
+    )
+    pipeline.run(bounded_candles(candles))
