@@ -4,7 +4,8 @@ permissions:
   contents: read
 jobs:
   local-batch:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -20,3 +21,13 @@ jobs:
           uv run marketpulse make-fixture
           uv run marketpulse batch-day --date 2024-01-01 --fixture-dir data/fixture
           uv run marketpulse batch-day --date 2024-01-01 --fixture-dir data/fixture
+      - run: uv run python -m playwright install --with-deps chromium
+      - name: Actual offline CLI rejection replay and Chromium dashboard walkthrough
+        run: uv run python scripts/demo_batch.py --artifacts artifacts/clean-integration
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: marketpulse-clean-integration
+          path: |
+            artifacts/clean-integration/integration.json
+            artifacts/clean-integration/*.png

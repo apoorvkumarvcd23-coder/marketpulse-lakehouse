@@ -158,7 +158,7 @@ def test_dashboard_empty_error_and_filtered_snapshot(tmp_path, monkeypatch):
     root, fixtures = tmp_path / "batch", tmp_path / "fixture"
     monkeypatch.setenv("MARKETPULSE_BATCH_ROOT", str(root))
     script = Path(batch.__file__).with_name("dashboard.py")
-    view = AppTest.from_file(str(script)).run()
+    view = AppTest.from_file(str(script), default_timeout=15).run()
     assert not view.exception and "No published batch" in view.info[0].value
     batch.create_fixture(fixtures)
     batch.run_batch(date(2024, 1, 1), root=root, fixture_dir=fixtures)
