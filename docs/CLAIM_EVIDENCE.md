@@ -14,6 +14,15 @@ SHA-256 values, bytes and accepted/replay counts. Synthetic fixture data is
 explicitly labelled and is not exchange data. No throughput or business gain
 is claimed. The existing 145 checks plus 17 batch/dashboard checks pass locally.
 
-Still required: clean-clone final demo/acceptance, dbt, one-month budgets, broad
+CORE09 integration passed at source `254f504ce6a0bf047b2e32c2220c25af23a0187b`:
+[clean Linux CI](https://github.com/apoorvkumarvcd23-coder/marketpulse-lakehouse/actions/runs/43633564831),
+[native public plus Linux offline evidence](clean-integration-2026-11-15.json)
+and [runbook/screenshots](CLEAN_INTEGRATION.md). The real CLI rejects checksum and
+typed-row faults without changing the pointer or any trusted snapshot file;
+business-content hashes/counts survive replay, and opening/filtering the actual
+browser leaves snapshot bytes unchanged. Both ms/us fixtures and all 162 checks
+pass; the native public run/replay each contain 4,320 keys.
+
+Still required: final clean-clone/claim acceptance audit, dbt, one-month budgets, broad
 quarantine/recovery/retention and full December release gates. Cloud/live streaming
 and AI forecasting are unimplemented. No v0.1.0 or v1.0.0 tag is earned here.

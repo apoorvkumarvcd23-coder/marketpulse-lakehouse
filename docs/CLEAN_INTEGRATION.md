@@ -1,5 +1,26 @@
 # Clean CLI-to-dashboard integration
 
+## Recorded 15 November 2026
+
+The [permanent native and Linux report](clean-integration-2026-11-15.json)
+records source `254f504ce6a0bf047b2e32c2220c25af23a0187b` and
+[passing clean-checkout CI](https://github.com/apoorvkumarvcd23-coder/marketpulse-lakehouse/actions/runs/43633564831).
+All 162 tests, lint/format, doctor and the actual offline CLI/browser walkthrough
+pass. Native Windows separately fetched the public archives twice: each run
+reconciles 4,320 unique candles, 1,440 per symbol, from 196,942 ZIP bytes. Both
+ms/us fixtures leave nine unique candles; both rejected-input drills preserve
+the pointer and every trusted snapshot byte. No source/model/HTTP mocks are
+used by this walkthrough; deterministic lower-level tests remain separate.
+
+Inspected native screenshots:
+[empty](evidence/2026-11-15/empty.png),
+[invalid pointer](evidence/2026-11-15/invalid-pointer.png),
+[synthetic partial ETH day](evidence/2026-11-15/fixture-eth.png),
+[public full ETH day](evidence/2026-11-15/public-eth.png).
+The report includes their hashes and the separate Linux offline results.
+
+## Reproduce the walkthrough
+
 Use Python 3.12 and the committed `uv.lock`. The browser verifier is a pinned
 development dependency; it does not add a browser requirement to batch ingestion.
 All data created by this walkthrough stays under the chosen ignored artifact

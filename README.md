@@ -24,6 +24,12 @@ retain the previous immutable snapshot. See [the batch runbook](docs/BATCH_RUNBO
 [recorded public-source evidence](docs/public-run-2026-11-11.json) and
 [claim ledger](docs/CLAIM_EVIDENCE.md). Final clean-clone acceptance is still due.
 
+**15 November integration:** the [clean CLI/browser walkthrough](docs/CLEAN_INTEGRATION.md)
+now passes on a fresh Linux checkout. Native public-source execution separately
+verifies the 4,320-key replay, checksum/typed-row rejection with unchanged trusted
+bytes, and four dashboard states. [Report and screenshots](docs/clean-integration-2026-11-15.json)
+record both environments. The final portfolio acceptance audit remains 17 November.
+
 ```powershell
 uv sync --locked
 uv run marketpulse make-fixture

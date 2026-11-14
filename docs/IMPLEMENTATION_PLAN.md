@@ -13,6 +13,16 @@ The fixed five-row sample alone is not the finished core target.
 
 ## Source-grounded starting point
 
+### Verified batch and clean integration — 15 November 2026
+
+The one-day BTC/ETH/SOL batch core and clean CLI/browser integration now pass.
+Both explicit timestamp-unit fixtures, unchanged snapshot bytes on replay or
+rejected input, native public-source 4,320-key run/replay and Linux offline
+CI are recorded in [the integration report/runbook](CLEAN_INTEGRATION.md).
+Final four-project acceptance remains 17 November. dbt/month-scale budgets,
+broader quarantine/recovery and December release gates remain future scope.
+The starting-point review below is historical, not current delivery status.
+
 Reviewed main `d8c0e5fe18fd879e9cab015b129f29854b0386a4`: README/90-day roadmap,
 Python package/lock configuration, CLI, validated candle contract, HTTP/checksum
 download path, manifests, raw layout, dlt loader, DuckDB summaries and tests.

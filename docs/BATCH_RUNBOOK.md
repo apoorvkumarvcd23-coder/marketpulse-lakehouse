@@ -81,5 +81,7 @@ Actual public-source dashboard, 11 November 2026:
 
 ![Public one-day dashboard](marketpulse-public-day.png)
 
-Final clean-clone walkthrough and evidence audit remain CORE09/CORE-ACCEPT.
+The [CORE09 clean CLI/browser walkthrough](CLEAN_INTEGRATION.md) is verified with
+separate native public-source and Linux offline evidence. The final
+clean-clone/claim audit remains CORE-ACCEPT on 17 November.
 No complete-core release tag is implied by the current batch slice.
