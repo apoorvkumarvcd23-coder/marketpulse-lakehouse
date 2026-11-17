@@ -72,8 +72,10 @@ uv run pytest -q
 uv run marketpulse doctor
 ```
 
-On a Windows CRLF checkout use `--config "format.line-ending='auto'"` for the
-format check. If a pre-existing system pytest temp directory is inaccessible,
+New clones retain LF text on Windows via `.gitattributes`, matching Ruff's
+configured format. In an older CRLF checkout use `--config "format.line-ending='auto'"`
+for a local format check, or use a fresh clone without rewriting user edits.
+If a pre-existing system pytest temp directory is inaccessible,
 create `artifacts/` and pass a fresh `--basetemp artifacts/check-<unique-name>`.
 CI runs on a clean Linux checkout, without live public downloads.
 

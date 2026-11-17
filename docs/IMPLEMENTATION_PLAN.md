@@ -13,6 +13,13 @@ The fixed five-row sample alone is not the finished core target.
 
 ## Source-grounded starting point
 
+### Core acceptance — 17 November 2026
+
+The [bounded core audit](CORE_ACCEPTANCE.md) records fresh offline/public replay,
+clean dependency installation and the Windows LF checkout-policy repair. It maps
+allowed wording to code/tests and keeps dbt/month-scale/recovery extensions open.
+Only the reviewed acceptance commit with passing full CI may receive v0.1.0.
+
 ### Verified batch and clean integration — 15 November 2026
 
 The one-day BTC/ETH/SOL batch core and clean CLI/browser integration now pass.

@@ -23,6 +23,8 @@ business-content hashes/counts survive replay, and opening/filtering the actual
 browser leaves snapshot bytes unchanged. Both ms/us fixtures and all 162 checks
 pass; the native public run/replay each contain 4,320 keys.
 
-Still required: final clean-clone/claim acceptance audit, dbt, one-month budgets, broad
+The [17 November bounded core audit](CORE_ACCEPTANCE.md) records fresh clean-clone
+checks and public/offline replay; the acceptance commit needs passing CI before
+the v0.1.0 tag. Still required for v1.0.0: dbt, one-month budgets, broad
 quarantine/recovery/retention and full December release gates. Cloud/live streaming
-and AI forecasting are unimplemented. No v0.1.0 or v1.0.0 tag is earned here.
+and AI forecasting are unimplemented. A core tag does not complete these v1 gates.

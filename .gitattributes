@@ -1,0 +1,2 @@
+# Keep clean Windows checkouts compatible with Ruff's required LF formatting.
+* text=auto eol=lf

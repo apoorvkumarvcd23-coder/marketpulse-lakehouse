@@ -16,19 +16,24 @@ building one coherent system rather than a collection of unrelated exercises.
 
 ## Current status
 
+**17 November: bounded core acceptance audited.** The [contract/claim ledger](docs/CORE_ACCEPTANCE.md)
+records a fresh clean-clone install, 162 checks, real offline/public CLI/browser
+runs and remaining scope. v0.1.0 is gated by the acceptance commit's full CI;
+dbt, month-scale work and full v1.0.0 hardening remain December features.
+
 **11 November 2026: runnable one-day BTC/ETH/SOL batch core.** Verified archives
 flow through UTC/decimal validation, dlt business-key merge, partitioned Parquet
 and DuckDB daily SQL summaries to a read-only Streamlit dashboard. A real
 2025-01-01 run and replay each reconcile **4,320 unique candles**. Failed updates
 retain the previous immutable snapshot. See [the batch runbook](docs/BATCH_RUNBOOK.md),
 [recorded public-source evidence](docs/public-run-2026-11-11.json) and
-[claim ledger](docs/CLAIM_EVIDENCE.md). Final clean-clone acceptance is still due.
+[claim ledger](docs/CLAIM_EVIDENCE.md). See the 17 November audit for current core acceptance.
 
 **15 November integration:** the [clean CLI/browser walkthrough](docs/CLEAN_INTEGRATION.md)
 now passes on a fresh Linux checkout. Native public-source execution separately
 verifies the 4,320-key replay, checksum/typed-row rejection with unchanged trusted
 bytes, and four dashboard states. [Report and screenshots](docs/clean-integration-2026-11-15.json)
-record both environments. The final portfolio acceptance audit remains 17 November.
+record both environments. The 17 November core audit adds a fresh native public replay.
 
 ```powershell
 uv sync --locked
