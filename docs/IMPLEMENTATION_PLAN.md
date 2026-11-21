@@ -13,6 +13,19 @@ The fixed five-row sample alone is not the finished core target.
 
 ## Source-grounded starting point
 
+### Range planning — XM01, 21 November 2026
+
+`plan-range` now implements M02: 1–31 completed UTC days, one to three supported
+pairs, exact archive/checksum URLs and safe relative paths, with explicit file
+and payload-byte budgets checked before manifest enumeration. It is read-only
+and performs no HTTP requests. January 2025 plans 93 ZIPs/93 checksums with a
+97,612,800-byte cap. Native verification covers 201 tests and actual installed
+CLI plus existing offline ingestion/browser demonstrations; CI repeats them.
+See [the runbook](BATCH_RUNBOOK.md#range-planning) and
+[native evidence](month-plan-native-2026-11-21.json).
+The bounded core has its v0.1.0 tag; M09 actual month ingestion, measured
+resources, dbt and broader recovery remain open. A planner is not an ingestion run.
+
 ### Core acceptance — 17 November 2026
 
 The [bounded core audit](CORE_ACCEPTANCE.md) records fresh offline/public replay,

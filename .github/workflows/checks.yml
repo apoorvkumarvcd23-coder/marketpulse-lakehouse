@@ -17,6 +17,8 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run pytest -q
       - run: uv run marketpulse doctor
+      - name: Actual offline month-plan CLI and read-only data preservation
+        run: uv run python scripts/demo_plan.py --artifacts artifacts/month-plan
       - run: |
           uv run marketpulse make-fixture
           uv run marketpulse batch-day --date 2024-01-01 --fixture-dir data/fixture
@@ -31,3 +33,4 @@ jobs:
           path: |
             artifacts/clean-integration/integration.json
             artifacts/clean-integration/*.png
+            artifacts/month-plan/*.json

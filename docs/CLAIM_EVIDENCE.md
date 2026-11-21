@@ -3,6 +3,7 @@
 | Claim | Code | Verification |
 | --- | --- | --- |
 | Bounded three-symbol daily plan | `batch.plan`, `Source`, CLI `batch-day --dry-run` | Unsafe/duplicate symbols, current date and explicit byte/file budget tests |
+| Read-only range plan with explicit file/payload budgets | `planning.plan_range`, CLI `plan-range` | 39 cases in `tests/test_planning.py`; actual CLI `scripts/demo_plan.py` checks a 31-day/186-file manifest, deterministic reordered pairs, five rejection cases and unchanged existing data |
 | Checksum-bound exact archives, explicit ms/us and decimal/UTC validation | `batch.read_archive`, `source_time`, existing checksum/HTTP/contract modules | Both date-unit fixtures; checksum, date, precision, OHLC and duplicate rejection |
 | Idempotent bounded backfill without global-cursor skipping | `load_bounded_candles` | Later BTC then earlier ETH and corrected older key; two complete replay runs |
 | Trusted snapshot survives a failed update | `writer_lock`, `run_batch`, `current_snapshot` | Cross-process lock; failed checksum/rows/export preserve pointer and previous DB hash |
@@ -25,6 +26,18 @@ pass; the native public run/replay each contain 4,320 keys.
 
 The [17 November bounded core audit](CORE_ACCEPTANCE.md) records fresh clean-clone
 checks and public/offline replay; the acceptance commit needs passing CI before
-the v0.1.0 tag. Still required for v1.0.0: dbt, one-month budgets, broad
+the v0.1.0 tag (now available). Still required for v1.0.0: dbt, actual one-month
+ingestion with measured/enforced resource budgets, broad
 quarantine/recovery/retention and full December release gates. Cloud/live streaming
 and AI forecasting are unimplemented. A core tag does not complete these v1 gates.
+
+On 21 November, 201 tests (162 existing plus 39 planning cases), lint, format
+and doctor pass on Python 3.12.13/Windows. The actual installed range CLI plans
+93 ZIPs and 93 checksums with a 97,612,800-byte payload cap; its canonical
+manifest digest and native observations are in
+[the planning report](month-plan-native-2026-11-21.json).
+The existing real offline CLI/DuckDB/Parquet/browser walkthrough also passes.
+CI repeats both demonstrations and retains the complete manifest/report in its
+`marketpulse-clean-integration` artifact. This proves planning and data
+preservation, not source existence, actual sizes, month-scale downloads,
+retry traffic or expanded/storage output bounds.

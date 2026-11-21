@@ -16,10 +16,21 @@ building one coherent system rather than a collection of unrelated exercises.
 
 ## Current status
 
-**17 November: bounded core acceptance audited.** The [contract/claim ledger](docs/CORE_ACCEPTANCE.md)
-records a fresh clean-clone install, 162 checks, real offline/public CLI/browser
-runs and remaining scope. v0.1.0 is gated by the acceptance commit's full CI;
-dbt, month-scale work and full v1.0.0 hardening remain December features.
+**21 November: budgeted month-range dry-run planning.** Enumerate up to 31
+completed UTC days for BTC/ETH/SOL, including ZIP and checksum URLs, safe relative
+paths and per-file payload caps. Both file and byte budgets are required.
+The command performs no downloads or data writes; actual month ingestion and
+source availability are unverified. See [usage and limits](docs/BATCH_RUNBOOK.md#range-planning)
+and [native verification](docs/month-plan-native-2026-11-21.json).
+
+```powershell
+uv run marketpulse plan-range --start 2025-01-01 --end 2025-02-01 --max-files 186 --max-bytes 100000000
+```
+
+This plans 93 archives plus 93 checksums with a 97,612,800-byte payload cap.
+The [bounded core audit](docs/CORE_ACCEPTANCE.md) records the earlier clean-clone
+checks and real offline/public CLI/browser runs; v0.1.0 is available.
+dbt, actual month-scale ingestion and full v1.0.0 hardening remain December features.
 
 **11 November 2026: runnable one-day BTC/ETH/SOL batch core.** Verified archives
 flow through UTC/decimal validation, dlt business-key merge, partitioned Parquet

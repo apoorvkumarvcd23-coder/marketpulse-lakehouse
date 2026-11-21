@@ -1,0 +1,70 @@
+{
+  "recorded_at_utc": "2026-11-21T03:19:31.414801+00:00",
+  "source_base": "074a2e860b6c5b82ebedfa423b19aba3f7f2c3e8",
+  "source_note": "Observations cover the XM01 change in this file history; publication CI separately verifies the exact commit.",
+  "environment": {
+    "platform": "Windows",
+    "python": "3.12.13",
+    "install": "uv sync --locked in a fresh remote clone"
+  },
+  "checks": {
+    "tests": 201,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "ruff_check": "passed",
+    "ruff_format": "passed",
+    "doctor_requirements_passed": 5
+  },
+  "month_planning": {
+    "status": "passed",
+    "integration": "Actual installed Python package CLI subprocesses; no CLI/plan mocks",
+    "platform": "Windows",
+    "archive_count": 93,
+    "file_count": 186,
+    "planned_max_bytes": 97612800,
+    "manifest_sha256": "65eded0b53bf89acf020224743d4416700bcf7b1fc18bac373a8e66c8e8e8c08",
+    "repeatable_with_reordered_symbols": true,
+    "rejected_cases": {
+      "file_budget": true,
+      "byte_budget": true,
+      "range_limit": true,
+      "unsafe_symbol": true,
+      "canonical_date": true
+    },
+    "all_existing_data_bytes_and_file_set_unchanged": true,
+    "limits": "Offline planning only. Source existence/sizes, actual month ingestion, retry traffic and expanded/storage output are unverified."
+  },
+  "existing_offline_core": {
+    "status": "passed",
+    "timestamp_units": [
+      "ms",
+      "us"
+    ],
+    "fixture_unique_candles": 9,
+    "failure_drills": {
+      "bad_checksum": "marketpulse: error: SHA-256 mismatch for BTCUSDT-1m-2024-01-01.zip: expected 62a851e8c36177e577a301f9e806fd8a746233d2e9338c3e69cb32503f63b6b3, calculated 5753eeabf4200c202c2a31a13aff502a479e340475a7a5f7385f5d5a12ce72a5",
+      "valid_checksum_bad_ohlc": "marketpulse: error: row 1: invalid typed candle",
+      "pointer_and_all_trusted_snapshot_bytes_unchanged": true,
+      "rejected_runs": 2
+    },
+    "browser_states": [
+      "empty",
+      "error",
+      "fixture"
+    ],
+    "fixture_browser_read_only_bytes_verified": true,
+    "public_source_run": false
+  },
+  "reproduce": [
+    "uv sync --locked",
+    "uv run ruff check .",
+    "uv run ruff format --check .",
+    "uv run pytest -q --basetemp artifacts/check-unique",
+    "uv run marketpulse doctor",
+    "uv run python scripts/demo_plan.py --artifacts artifacts/month-plan",
+    "uv run python -m playwright install chromium",
+    "uv run python scripts/demo_batch.py --artifacts artifacts/core-offline"
+  ],
+  "limits": "Offline planning only; no current source availability/size check or month ingestion. Existing actual public one-day evidence remains separate. No dbt, throughput, expanded/storage bound or v1 release claim."
+}

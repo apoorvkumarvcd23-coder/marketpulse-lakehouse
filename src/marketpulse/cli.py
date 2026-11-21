@@ -46,6 +46,22 @@ def _utc_timestamp(value: str) -> datetime:
     return parsed.astimezone(UTC)
 
 
+def _plan_date(value: str) -> date:
+    try:
+        parsed = date.fromisoformat(value)
+        if parsed.isoformat() != value:
+            raise ValueError("noncanonical date")
+        return parsed
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("use a calendar date in YYYY-MM-DD format") from exc
+
+
+def _positive_budget(value: str) -> int:
+    if not value.isascii() or not value.isdecimal() or int(value) < 1:
+        raise argparse.ArgumentTypeError("budget must be a positive whole number")
+    return int(value)
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Describe the commands and options accepted by the MarketPulse CLI."""
     parser = argparse.ArgumentParser(
@@ -57,6 +73,12 @@ def build_parser() -> argparse.ArgumentParser:
         "doctor",
         help="explain and verify the basic local project setup",
     )
+    bounded = commands.add_parser("plan-range", help="dry-run only: enumerate at most 31 UTC days")
+    bounded.add_argument("--start", type=_plan_date, required=True, help="inclusive YYYY-MM-DD")
+    bounded.add_argument("--end", type=_plan_date, required=True, help="exclusive YYYY-MM-DD")
+    bounded.add_argument("--symbols", nargs="+", default=[s.value for s in MarketSymbol])
+    bounded.add_argument("--max-files", type=_positive_budget, required=True)
+    bounded.add_argument("--max-bytes", type=_positive_budget, required=True)
     daily = commands.add_parser("batch-day", help="plan or publish one bounded UTC archive day")
     daily.add_argument("--date", type=date.fromisoformat, required=True)
     daily.add_argument("--symbols", nargs="+", default=[s.value for s in MarketSymbol])
@@ -145,6 +167,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run the requested command and return a process exit code."""
     parser = build_parser()
     arguments = parser.parse_args(argv)
+
+    if arguments.command == "plan-range":
+        from marketpulse.planning import plan_range
+
+        try:
+            report = plan_range(
+                arguments.start,
+                arguments.end,
+                arguments.symbols,
+                max_files=arguments.max_files,
+                max_bytes=arguments.max_bytes,
+            )
+        except ValueError as exc:
+            parser.error(str(exc))
+        print(json.dumps(report, indent=2))
+        return 0
 
     if arguments.command in {"batch-day", "make-fixture"}:
         from marketpulse.batch import ARCHIVE_LIMIT, create_fixture, plan, run_batch
